@@ -2,19 +2,19 @@ import { z } from 'zod';
 
 const envSchema = z.object({
 	// Supabase
-	SUPABASE_URL: z.string().url(),
+	SUPABASE_URL: z.url(),
 	SUPABASE_ANON_KEY: z.string(),
 	SUPABASE_SERVICE_ROLE_KEY: z.string(),
 
 	// Drizzle — use direct connection (port 5432), not pooler
-	DATABASE_URL: z.string().url(),
+	DATABASE_URL: z.url(),
 
 	// Mail
-	SMTP_HOST: z.string(),
-	SMTP_PORT: z.coerce.number().default(587),
-	SMTP_USER: z.string(),
-	SMTP_PASS: z.string(),
-	MAIL_FROM: z.string().email(),
+	// SMTP_HOST: z.string(),
+	// SMTP_PORT: z.coerce.number().default(587),
+	// SMTP_USER: z.string(),
+	// SMTP_PASS: z.string(),
+	// MAIL_FROM: z.string().email(),
 
 	NODE_ENV: z
 		.enum(['development', 'production', 'test'])

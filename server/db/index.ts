@@ -1,12 +1,10 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
-import * as schema from './schema';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import { env } from '../utils/env';
+import postgres from 'postgres';
 
-const pool = new Pool({
-	connectionString: env.DATABASE_URL,
-	ssl: { rejectUnauthorized: false }, // required for Supabase
-});
+const connectionString = env.DATABASE_URL;
 
-export const db = drizzle(pool, { schema });
+const client = postgres(connectionString, { prepare: false });
+export const db = drizzle(client);
+
 export type DB = typeof db;

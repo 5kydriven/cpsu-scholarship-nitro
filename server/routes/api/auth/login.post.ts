@@ -1,15 +1,14 @@
-import { db } from '#server/db/index.ts';
-import { students } from '#server/db/migrations/schema.ts';
 import { handleError, successResponse } from '#server/utils/response.ts';
 import { defineHandler } from 'nitro';
+import { requestBody } from '#server/utils/request-body.ts';
 
 export default defineHandler(async (event) => {
 	try {
-		const result = await db.select().from(students);
-		return successResponse({
-			data: result,
-			meta: {},
-		});
+		const body = await requestBody(event);
+
+		console.log(body);
+
+		return successResponse({ data: body });
 	} catch (err) {
 		return handleError(event, err);
 	}
