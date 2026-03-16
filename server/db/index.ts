@@ -1,11 +1,12 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { useRuntimeConfig } from 'nitro/runtime-config';
 import * as schema from './schema';
+import { env } from '../utils/env';
 
-const config = useRuntimeConfig();
-
-const pool = new Pool({ connectionString: config.DATABASE_URL });
+const pool = new Pool({
+	connectionString: env.DATABASE_URL,
+	ssl: { rejectUnauthorized: false }, // required for Supabase
+});
 
 export const db = drizzle(pool, { schema });
 export type DB = typeof db;

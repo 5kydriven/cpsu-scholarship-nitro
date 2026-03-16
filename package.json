@@ -15,6 +15,7 @@
     "nitro": "latest"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.99.2",
     "consola": "^3.4.2",
     "drizzle-orm": "^0.45.1",
     "jiti": "^2.6.1",

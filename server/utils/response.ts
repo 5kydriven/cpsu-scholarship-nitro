@@ -1,39 +1,33 @@
-import type { H3Event } from 'h3';
 import { AppError } from './errors';
 
-export function successResponse<T>({
-	data,
-	meta,
-}: {
-	data: T;
-	meta?: Record<string, unknown>;
-}) {
+export function successResponse<T>(data: T, meta?: Record<string, unknown>) {
 	return { success: true, data, ...(meta ? { meta } : {}) };
 }
 
-export function handleError({
-	event,
-	error,
-}: {
-	event: H3Event;
-	error: unknown;
-}) {
+export function handleError(event: unknown, error: unknown): Response {
 	if (error instanceof AppError) {
-		event.res.status = error.statusCode;
-		return {
-			success: false,
-			error: {
-				code: error.code ?? 'ERROR',
-				message: error.message,
-				...(error.details ? { details: error.details } : {}),
+		return new Response(
+			JSON.stringify({
+				success: false,
+				error: {
+					code: error.code ?? 'ERROR',
+					message: error.message,
+					...(error.details ? { details: error.details } : {}),
+				},
+			}),
+			{
+				status: error.statusCode,
+				headers: { 'Content-Type': 'application/json' },
 			},
-		};
+		);
 	}
 
 	console.error(error);
-	event.res.status = (error as AppError).statusCode;
-	return {
-		success: false,
-		error: { code: 'INTERNAL_ERROR', message: 'Something went wrong' },
-	};
+	return new Response(
+		JSON.stringify({
+			success: false,
+			error: { code: 'INTERNAL_ERROR', message: 'Something went wrong' },
+		}),
+		{ status: 500, headers: { 'Content-Type': 'application/json' } },
+	);
 }
