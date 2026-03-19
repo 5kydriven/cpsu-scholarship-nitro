@@ -251,63 +251,24 @@ MAIL_FROM=no-reply@yourdomain.com
 
 ## 6. Database — Drizzle + Supabase
 
-### `server/db/schema/profiles.ts`
-
-```ts
-import { pgTable, uuid, text, timestamp, pgEnum } from 'drizzle-orm/pg-core';
-
-export const roleEnum = pgEnum('role', ['user', 'admin']);
-
-// id = Supabase auth.users.id — same UUID, no foreign key needed
-export const profiles = pgTable('profiles', {
-	id: uuid('id').primaryKey(),
-	email: text('email').notNull().unique(),
-	name: text('name').notNull(),
-	role: roleEnum('role').default('user').notNull(),
-	avatarUrl: text('avatar_url'),
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-	updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
-
-export type Profile = typeof profiles.$inferSelect;
-export type NewProfile = typeof profiles.$inferInsert;
-```
-
-### `server/db/schema/index.ts`
-
-```ts
-// Always use explicit named exports — export * causes Drizzle query client conflicts
-export { profiles, roleEnum, type Profile, type NewProfile } from './profiles';
-```
-
 ### `server/db/index.ts`
 
 ```ts
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { env } from '../utils/env';
 import postgres from 'postgres';
+import { env } from '../utils/env';
+import * as schema from './schema/schema-index';
 
-const connectionString = env.DATABASE_URL;
+const client = postgres(env.DATABASE_URL, {
+	prepare: false,
+	max: 10,
+});
 
-const client = postgres(connectionString, { prepare: false });
-export const db = drizzle(client);
+export const db = drizzle(client, { schema });
 
 export type DB = typeof db;
-```
 
-### `drizzle.config.ts`
-
-```ts
-import { defineConfig } from 'drizzle-kit';
-
-export default defineConfig({
-	schema: './server/db/schema/index.ts',
-	out: './drizzle/migrations',
-	dialect: 'postgresql',
-	dbCredentials: {
-		url: process.env.DATABASE_URL!,
-	},
-});
+export * from './schema/schema-index';
 ```
 
 ### Migration commands
@@ -341,10 +302,21 @@ You do **not** manage sessions, tokens, or password hashing. Supabase owns that 
 import { createClient } from '@supabase/supabase-js';
 import { env } from '../utils/env';
 
-// Standard client — respects RLS
+// ─────────────────────────────────────────────
+// Standard client — used for auth token verification.
+// Respects Row-Level Security (RLS).
+// DO NOT use this for admin operations.
+// ─────────────────────────────────────────────
 export const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
 
-// Admin client — bypasses RLS, server-side only
+// ─────────────────────────────────────────────
+// Admin client — bypasses RLS entirely.
+// Use ONLY on the server side for:
+//   • Creating/deleting auth users (Phase 2 — student registration)
+//   • Reading auth.users metadata
+//   • Storage operations (Phase 3 — application documents)
+// Never expose this client to the frontend.
+// ─────────────────────────────────────────────
 export const supabaseAdmin = createClient(
 	env.SUPABASE_URL,
 	env.SUPABASE_SERVICE_ROLE_KEY,
@@ -355,44 +327,120 @@ export const supabaseAdmin = createClient(
 		},
 	},
 );
+
+/**
+ * Returns the public URL for a file stored in the
+ * application-documents bucket (application_documents.file_url).
+ *
+ * @example
+ * const url = getDocumentUrl('disability/abc123.pdf');
+ */
+export function getDocumentUrl(path: string): string {
+	const { data } = supabaseAdmin.storage
+		.from(env.STORAGE_BUCKET_DOCUMENTS)
+		.getPublicUrl(path);
+
+	return data.publicUrl;
+}
+
+/**
+ * Uploads a file to the application-documents bucket.
+ * Returns the public URL on success, throws on error.
+ *
+ * Used by: application.service.ts (Phase 3)
+ *
+ * @param path   Storage path, e.g. `disability/<applicationId>/<filename>`
+ * @param file   ArrayBuffer or Blob of the file content
+ * @param mime   MIME type, e.g. `application/pdf` or `image/jpeg`
+ */
+export async function uploadDocument(
+	path: string,
+	file: ArrayBuffer | Blob,
+	mime: string,
+): Promise<string> {
+	const { error } = await supabaseAdmin.storage
+		.from(env.STORAGE_BUCKET_DOCUMENTS)
+		.upload(path, file, {
+			contentType: mime,
+			upsert: false,
+		});
+
+	if (error) {
+		throw new Error(`Storage upload failed: ${error.message}`);
+	}
+
+	return getDocumentUrl(path);
+}
+
+export async function deleteDocument(path: string): Promise<void> {
+	const { error } = await supabaseAdmin.storage
+		.from(env.STORAGE_BUCKET_DOCUMENTS)
+		.remove([path]);
+
+	if (error) {
+		console.error(`[storage] Failed to delete ${path}:`, error.message);
+	}
+}
 ```
 
 ### `server/types/h3.d.ts`
 
 ```ts
 import type { User } from '@supabase/supabase-js';
-import type { Profile } from '../db/schema';
+
+export type AppRole = 'admin' | 'student' | 'staff';
+
+export interface AppStudent {
+	id: string;
+	studentId: string;
+	lastName: string;
+	givenName: string;
+	middleName: string | null;
+	extName: string | null;
+	sex: string | null;
+	birthdate: string | null;
+	contactNumber: string | null;
+	email: string | null;
+	createdAt: string | null;
+}
 
 declare module 'h3' {
 	interface H3EventContext {
-		user: User; // Supabase auth user
-		profile: Profile; // Your app profile from DB
+		user: User;
+		role: AppRole;
+		student: AppStudent | null;
+		params: Record<string, string>;
 	}
 }
-```
 
-### `server/routes/api/auth/me.get.ts`
+import type { H3EventContext } from 'h3';
+import { ForbiddenError, UnauthorizedError } from '../utils/errors';
 
-```ts
-import { defineHandler } from 'nitro';
-import { successResponse, handleError } from '../../../utils/response';
-
-// Middleware already verified token and attached context
-export default defineHandler(async (event) => {
-	try {
-		return successResponse({
-			user: event.context.user,
-			profile: event.context.profile,
-		});
-	} catch (err) {
-		return handleError(event, err);
+export function requireStudent(ctx: H3EventContext): AppStudent {
+	if (ctx.role !== 'student' || !ctx.student) {
+		throw new UnauthorizedError('Student access required');
 	}
-});
+	return ctx.student;
+}
+
+export function requireAdmin(ctx: H3EventContext): void {
+	if (ctx.role !== 'admin') {
+		throw new ForbiddenError('Admin access required');
+	}
+}
+
+export function requireStaffOrAdmin(ctx: H3EventContext): void {
+	if (ctx.role !== 'staff' && ctx.role !== 'admin') {
+		throw new ForbiddenError('Staff or admin access required');
+	}
+}
+
+export function isStudentContext(
+	ctx: H3EventContext,
+): ctx is H3EventContext & { student: AppStudent } {
+	return ctx.role === 'student' && ctx.student !== null;
+}
 ```
-
-> Auth endpoints (sign-up, sign-in, sign-out, refresh) are handled by Supabase directly on the client via `@supabase/supabase-js`. You do not need server routes for these.
-
----
 
 ## 8. Middleware
 
@@ -402,33 +450,47 @@ Files in `middleware/` are numbered to enforce execution order.
 
 ```ts
 import { defineHandler } from 'nitro';
+import { isDev } from '../utils/env';
 
 export default defineHandler((event) => {
 	const start = Date.now();
 	const method = event.req.method;
-	const url = new URL(event.req.url).pathname;
+	const parsedUrl = new URL(event.req.url);
+	const path = parsedUrl.pathname;
 
-	// Log after response
+	const display =
+		isDev && parsedUrl.search ? `${path}${parsedUrl.search}` : path;
+
 	event.node?.res?.on('finish', () => {
 		const status = event.node?.res?.statusCode ?? 0;
 		const ms = Date.now() - start;
-		console.log(`[${method}] ${url} → ${status} (${ms}ms)`);
+
+		const label = statusLabel(status);
+
+		console.log(`${label} [${method}] ${display} → ${status} (${ms}ms)`);
 	});
 });
+
+function statusLabel(status: number): string {
+	if (status >= 500) return '🔴';
+	if (status >= 400) return '🟡';
+	if (status >= 300) return '🔵';
+	return '🟢';
+}
 ```
 
 ### `server/middleware/02.auth.ts`
 
 ```ts
 import { defineHandler } from 'nitro';
-import { supabase } from '../lib/supabase';
-import { db } from '../db';
-import { profiles } from '../db/schema';
 import { eq } from 'drizzle-orm';
+import { supabase } from '../lib/supabase';
+import { db, students } from '../db';
 import { UnauthorizedError } from '../utils/errors';
 import { handleError } from '../utils/response';
+import type { AppRole } from '../types/h3';
 
-const PUBLIC_ROUTES = ['/api/health', '/api/webhooks'];
+const PUBLIC_ROUTES: string[] = ['/api/health'];
 
 export default defineHandler(async (event) => {
 	const url = new URL(event.req.url);
@@ -437,13 +499,16 @@ export default defineHandler(async (event) => {
 	if (PUBLIC_ROUTES.some((r) => path.startsWith(r))) return;
 
 	const authHeader = event.req.headers.get('authorization');
+
 	if (!authHeader?.startsWith('Bearer ')) {
-		return handleError(event, new UnauthorizedError('Missing token'));
+		return handleError(
+			event,
+			new UnauthorizedError('Missing or malformed Authorization header'),
+		);
 	}
 
 	const token = authHeader.slice(7);
 
-	// Supabase verifies the JWT — no manual jwt.verify needed
 	const { data, error } = await supabase.auth.getUser(token);
 
 	if (error || !data.user) {
@@ -453,18 +518,28 @@ export default defineHandler(async (event) => {
 		);
 	}
 
-	event.context.user = data.user;
+	const authUser = data.user;
 
-	// Attach app profile
-	const profile = await db.query.profiles.findFirst({
-		where: eq(profiles.id, data.user.id),
+	const rawRole = authUser.user_metadata?.role as string | undefined;
+	const role: AppRole = rawRole === 'admin' ? 'admin' : 'student';
+
+	event.context.user = authUser;
+	event.context.role = role;
+
+	const student = await db.query.students.findFirst({
+		where: eq(students.id, authUser.id),
 	});
 
-	if (!profile) {
-		return handleError(event, new UnauthorizedError('Profile not found'));
-	}
+	event.context.student = student ?? null;
 
-	event.context.profile = profile;
+	if (role === 'student' && !student) {
+		return handleError(
+			event,
+			new UnauthorizedError(
+				'Student profile not found — please complete registration',
+			),
+		);
+	}
 });
 ```
 
@@ -474,26 +549,45 @@ For admin routes, use Nitro's `handlers` config instead of a global middleware f
 
 ```ts
 // nitro.config.ts
-handlers: [
-	{
-		route: '/api/admin/**',
-		handler: './server/middleware/admin-guard.ts',
-		middleware: true,
+serverDir: './server',
+	routeRules: {
+		'/api/**': { cors: true },
 	},
-];
+
+	handlers: [
+		{
+			route: '/api/admin/**',
+			handler: './server/middleware/admin-guard.ts',
+			middleware: true,
+		},
+	],
+
+	scheduledTasks: {
+
+		'0 0 1 6,11 *': 'scholars:qualify-check',
+
+		'0 * * * *': 'mail:queue',
+
+		'*/30 * * * *': 'health:check',
+	},
 ```
 
 ```ts
-// server/middleware/admin-guard.ts
 import { defineHandler } from 'nitro';
-import { AppError } from '../utils/errors';
+import { ForbiddenError } from '../utils/errors';
 import { handleError } from '../utils/response';
+import type { AppRole } from '../types/h3';
+
+const ALLOWED_ROLES: AppRole[] = ['admin'];
 
 export default defineHandler(async (event) => {
-	const profile = event.context.profile;
-	if (!profile || profile.role !== 'admin') {
-		return handleError(event, new AppError(403, 'Forbidden', 'FORBIDDEN'));
+	const role = event.context.role;
+
+	if (!role || !ALLOWED_ROLES.includes(role)) {
+		return handleError(event, new ForbiddenError('Admin access required'));
 	}
+
+	return;
 });
 ```
 
@@ -505,196 +599,11 @@ Services own all business logic. They use Drizzle directly — no repository lay
 
 ### `server/services/user.service.ts`
 
-```ts
-import { eq, ilike, and, asc, desc, count, or, type SQL } from 'drizzle-orm';
-import { db } from '../db';
-import { profiles, type NewProfile } from '../db/schema';
-import { mailService } from './mail.service';
-import { NotFoundError, AppError } from '../utils/errors';
-import { buildMeta, toOffset } from '../utils/pagination';
-import type {
-	CreateUserInput,
-	UpdateUserInput,
-	UserQuery,
-} from '../validators/user.validator';
-
-export const userService = {
-	async getById(id: string) {
-		const profile = await db.query.profiles.findFirst({
-			where: eq(profiles.id, id),
-		});
-		if (!profile) throw new NotFoundError('User');
-		return profile;
-	},
-
-	async getAll(query: UserQuery) {
-		const { page, limit, sortBy, sortOrder, q, role } = query;
-		const offset = toOffset(page, limit);
-
-		const conditions: SQL[] = [];
-
-		if (q) {
-			conditions.push(
-				or(ilike(profiles.name, `%${q}%`), ilike(profiles.email, `%${q}%`))!,
-			);
-		}
-
-		if (role) {
-			conditions.push(eq(profiles.role, role));
-		}
-
-		const where = conditions.length ? and(...conditions) : undefined;
-
-		const sortColumn =
-			{
-				name: profiles.name,
-				email: profiles.email,
-				createdAt: profiles.createdAt,
-			}[sortBy] ?? profiles.createdAt;
-
-		const orderBy = sortOrder === 'desc' ? desc(sortColumn) : asc(sortColumn);
-
-		const [data, [{ value: total }]] = await Promise.all([
-			db
-				.select()
-				.from(profiles)
-				.where(where)
-				.orderBy(orderBy)
-				.limit(limit)
-				.offset(offset),
-			db.select({ value: count() }).from(profiles).where(where),
-		]);
-
-		return { data, meta: buildMeta(total, page, limit) };
-	},
-
-	async create(id: string, input: CreateUserInput) {
-		const existing = await db.query.profiles.findFirst({
-			where: eq(profiles.email, input.email),
-		});
-		if (existing) throw new AppError(409, 'Email already in use', 'CONFLICT');
-
-		const [profile] = await db
-			.insert(profiles)
-			.values({
-				id, // Supabase auth UID
-				email: input.email,
-				name: input.name,
-			})
-			.returning();
-
-		mailService.sendWelcome(profile.email, profile.name).catch(console.error);
-		return profile;
-	},
-
-	async update(id: string, input: UpdateUserInput) {
-		const existing = await db.query.profiles.findFirst({
-			where: eq(profiles.id, id),
-		});
-		if (!existing) throw new NotFoundError('User');
-
-		const [profile] = await db
-			.update(profiles)
-			.set({ ...input, updatedAt: new Date() })
-			.where(eq(profiles.id, id))
-			.returning();
-
-		return profile;
-	},
-
-	async delete(id: string) {
-		const existing = await db.query.profiles.findFirst({
-			where: eq(profiles.id, id),
-		});
-		if (!existing) throw new NotFoundError('User');
-
-		const [profile] = await db
-			.delete(profiles)
-			.where(eq(profiles.id, id))
-			.returning();
-
-		return profile;
-	},
-};
-```
-
 ---
 
 ## 10. Route Handlers
 
 Routes are thin. They: validate → call service → respond. Nothing else.
-
-### `server/routes/api/users/index.get.ts`
-
-```ts
-import { defineHandler } from 'nitro';
-import { userQuerySchema } from '../../../validators/user.validator';
-import { userService } from '../../../services/user.service';
-import { successResponse, handleError } from '../../../utils/response';
-import { ValidationError } from '../../../utils/errors';
-
-export default defineHandler(async (event) => {
-	try {
-		const params = new URL(event.req.url).searchParams;
-		const parsed = userQuerySchema.safeParse(Object.fromEntries(params));
-		if (!parsed.success) throw new ValidationError(parsed.error.flatten());
-
-		const result = await userService.getAll(parsed.data);
-		return successResponse(result.data, result.meta);
-	} catch (err) {
-		return handleError(event, err);
-	}
-});
-```
-
-### `server/routes/api/users/index.post.ts`
-
-```ts
-import { defineHandler } from 'nitro';
-import { createUserSchema } from '../../../validators/user.validator';
-import { userService } from '../../../services/user.service';
-import { successResponse, handleError } from '../../../utils/response';
-import { ValidationError } from '../../../utils/errors';
-
-export default defineHandler(async (event) => {
-	try {
-		const body = await event.req.json();
-		const parsed = createUserSchema.safeParse(body);
-		if (!parsed.success) throw new ValidationError(parsed.error.flatten());
-
-		// Profile is tied to existing Supabase auth user
-		const user = event.context.user;
-		const profile = await userService.create(user.id, parsed.data);
-
-		return new Response(JSON.stringify(successResponse(profile)), {
-			status: 201,
-			headers: { 'Content-Type': 'application/json' },
-		});
-	} catch (err) {
-		return handleError(event, err);
-	}
-});
-```
-
-### `server/routes/api/users/[id].get.ts`
-
-```ts
-import { defineHandler } from 'nitro';
-import { userService } from '../../../services/user.service';
-import { successResponse, handleError } from '../../../utils/response';
-
-export default defineHandler(async (event) => {
-	try {
-		const { id } = event.context.params;
-		const user = await userService.getById(id);
-		return successResponse(user);
-	} catch (err) {
-		return handleError(event, err);
-	}
-});
-```
-
----
 
 ## 11. Validation — Zod
 
@@ -715,34 +624,6 @@ export const searchSchema = paginationSchema.extend({
 
 export type PaginationInput = z.infer<typeof paginationSchema>;
 ```
-
-### `server/validators/user.validator.ts`
-
-```ts
-import { z } from 'zod';
-import { searchSchema } from './shared.validator';
-
-export const createUserSchema = z.object({
-	email: z.string().email(),
-	name: z.string().min(2).max(100),
-});
-
-export const updateUserSchema = z.object({
-	name: z.string().min(2).max(100).optional(),
-	email: z.string().email().optional(),
-});
-
-export const userQuerySchema = searchSchema.extend({
-	role: z.enum(['user', 'admin']).optional(),
-	sortBy: z.enum(['name', 'email', 'createdAt']).default('createdAt'),
-});
-
-export type CreateUserInput = z.infer<typeof createUserSchema>;
-export type UpdateUserInput = z.infer<typeof updateUserSchema>;
-export type UserQuery = z.infer<typeof userQuerySchema>;
-```
-
----
 
 ## 12. Pagination & Filtering
 
@@ -813,18 +694,19 @@ GET /api/users?q=john&page=2&limit=10&sortBy=name&role=admin
 export class AppError extends Error {
 	constructor(
 		public statusCode: number,
-		public message: string,
-		public code?: string,
+		public override message: string,
+		public code: string,
 		public details?: unknown,
 	) {
 		super(message);
 		this.name = 'AppError';
+		Object.setPrototypeOf(this, new.target.prototype);
 	}
 }
 
-export class NotFoundError extends AppError {
-	constructor(resource: string) {
-		super(404, `${resource} not found`, 'NOT_FOUND');
+export class BadRequestError extends AppError {
+	constructor(message = 'Bad request') {
+		super(400, message, 'BAD_REQUEST');
 	}
 }
 
@@ -834,10 +716,60 @@ export class UnauthorizedError extends AppError {
 	}
 }
 
+export class ForbiddenError extends AppError {
+	constructor(message = 'Forbidden') {
+		super(403, message, 'FORBIDDEN');
+	}
+}
+
+export class NotFoundError extends AppError {
+	constructor(resource: string) {
+		super(404, `${resource} not found`, 'NOT_FOUND');
+	}
+}
+
+export class ConflictError extends AppError {
+	constructor(message: string) {
+		super(409, message, 'CONFLICT');
+	}
+}
+
 export class ValidationError extends AppError {
 	constructor(details: unknown) {
 		super(422, 'Validation failed', 'VALIDATION_ERROR', details);
 	}
+}
+
+export class FileTooLargeError extends AppError {
+	constructor(maxMb = 50) {
+		super(413, `File exceeds the ${maxMb} MB limit`, 'FILE_TOO_LARGE');
+	}
+}
+
+export class UnsupportedFileTypeError extends AppError {
+	constructor(allowed: string[]) {
+		super(
+			415,
+			`Unsupported file type. Allowed: ${allowed.join(', ')}`,
+			'UNSUPPORTED_FILE_TYPE',
+		);
+	}
+}
+
+export class ImportError extends AppError {
+	constructor(message: string, details?: unknown) {
+		super(422, message, 'IMPORT_ERROR', details);
+	}
+}
+
+export class InternalError extends AppError {
+	constructor(message = 'An unexpected error occurred') {
+		super(500, message, 'INTERNAL_ERROR');
+	}
+}
+
+export function isAppError(error: unknown): error is AppError {
+	return error instanceof AppError;
 }
 ```
 
@@ -848,23 +780,46 @@ export class ValidationError extends AppError {
 ### `server/utils/response.ts`
 
 ```ts
+import type { H3Event } from 'nitro';
 import { AppError } from './errors';
+import { isDev } from './env';
 
-export function successResponse<T>(data: T, meta?: Record<string, unknown>) {
-	return { success: true, data, ...(meta ? { meta } : {}) };
+export function successResponse<T>(
+	data: T,
+	meta?: Record<string, unknown>,
+): SuccessResponse<T> {
+	return {
+		success: true,
+		data,
+		...(meta ? { meta } : {}),
+	};
 }
 
-export function handleError(event: unknown, error: unknown): Response {
+export function createdResponse<T>(data: T): Response {
+	return new Response(
+		JSON.stringify({ success: true, data } satisfies SuccessResponse<T>),
+		{
+			status: 201,
+			headers: { 'Content-Type': 'application/json' },
+		},
+	);
+}
+
+export function noContentResponse(): Response {
+	return new Response(null, { status: 204 });
+}
+
+export function handleError(event: H3Event, error: unknown): Response {
 	if (error instanceof AppError) {
 		return new Response(
 			JSON.stringify({
 				success: false,
 				error: {
-					code: error.code ?? 'ERROR',
+					code: error.code,
 					message: error.message,
-					...(error.details ? { details: error.details } : {}),
+					...(error.details !== undefined ? { details: error.details } : {}),
 				},
-			}),
+			} satisfies ErrorResponse),
 			{
 				status: error.statusCode,
 				headers: { 'Content-Type': 'application/json' },
@@ -872,247 +827,59 @@ export function handleError(event: unknown, error: unknown): Response {
 		);
 	}
 
-	console.error(error);
-	return new Response(
-		JSON.stringify({
-			success: false,
-			error: { code: 'INTERNAL_ERROR', message: 'Something went wrong' },
-		}),
-		{ status: 500, headers: { 'Content-Type': 'application/json' } },
-	);
+	console.error('[handleError] Unhandled error:', error);
+
+	const body: ErrorResponse & { _debug?: unknown } = {
+		success: false,
+		error: {
+			code: 'INTERNAL_ERROR',
+			message: 'An unexpected error occurred',
+		},
+	};
+
+	if (isDev && error instanceof Error) {
+		body._debug = {
+			name: error.name,
+			message: error.message,
+			stack: error.stack,
+		};
+	}
+
+	return new Response(JSON.stringify(body), {
+		status: 500,
+		headers: { 'Content-Type': 'application/json' },
+	});
 }
+
+export interface SuccessResponse<T> {
+	success: true;
+	data: T;
+	meta?: Record<string, unknown>;
+}
+
+export interface ErrorResponse {
+	success: false;
+	error: {
+		code: string;
+		message: string;
+		details?: unknown;
+	};
+}
+
+export type ApiResponse<T> = SuccessResponse<T> | ErrorResponse;
 ```
-
----
-
-## 15. Cron / Scheduled Tasks
-
-Nitro v3 has built-in scheduled tasks via `scheduledTasks` in config. No `node-cron` needed.
-
-### `nitro.config.ts`
-
-```ts
-import { defineNitroConfig } from 'nitro/config';
-
-export default defineNitroConfig({
-	serverDir: './server',
-	scheduledTasks: {
-		'0 0 * * *': 'cleanup:sessions', // daily midnight
-		'0 * * * *': 'mail:queue', // every hour
-		'*/30 * * * *': 'health:check', // every 30 min
-	},
-});
-```
-
-### `server/tasks/cleanup-sessions.ts`
-
-```ts
-export default defineTask({
-	meta: {
-		name: 'cleanup:sessions',
-		description: 'Remove expired sessions from DB',
-	},
-	async run({ payload, context }) {
-		const { db } = await import('../db');
-		const { sessions } = await import('../db/schema');
-		const { lt } = await import('drizzle-orm');
-
-		const deleted = await db
-			.delete(sessions)
-			.where(lt(sessions.expiresAt, new Date()))
-			.returning();
-
-		console.log(`[cron] cleanup:sessions — removed ${deleted.length} sessions`);
-		return { success: true, removed: deleted.length };
-	},
-});
-```
-
-### `server/tasks/mail-queue.ts`
-
-```ts
-export default defineTask({
-	meta: {
-		name: 'mail:queue',
-		description: 'Process pending mail queue',
-	},
-	async run() {
-		const { mailService } = await import('../services/mail.service');
-		await mailService.processQueue();
-		return { success: true };
-	},
-});
-```
-
-> Tasks can also be triggered manually via `runTask('cleanup:sessions')` from a route handler — useful for admin panels or one-off operations.
-
----
 
 ## 16. Webhooks
 
 Webhook routes are in `PUBLIC_ROUTES` — they skip auth middleware but verify their own signature.
 
-### `server/routes/api/webhooks/stripe.post.ts`
-
-```ts
-import { defineHandler } from 'nitro';
-import { env } from '../../../utils/env';
-import { handleError } from '../../../utils/response';
-import { AppError } from '../../../utils/errors';
-
-export default defineHandler(async (event) => {
-	try {
-		const sig = event.req.headers.get('stripe-signature');
-		const rawBody = await event.req.text();
-
-		if (!sig || !rawBody) {
-			throw new AppError(400, 'Missing signature or body', 'BAD_REQUEST');
-		}
-
-		// Replace with: stripe.webhooks.constructEvent(rawBody, sig, env.WEBHOOK_SECRET_STRIPE)
-		const isValid = verifyStripeSignature(
-			rawBody,
-			sig,
-			env.WEBHOOK_SECRET_STRIPE,
-		);
-		if (!isValid) {
-			throw new AppError(400, 'Invalid webhook signature', 'INVALID_SIGNATURE');
-		}
-
-		const payload = JSON.parse(rawBody);
-		console.log(`[webhook] stripe: ${payload.type}`);
-
-		switch (payload.type) {
-			case 'checkout.session.completed':
-				// await orderService.handleCheckout(payload.data.object)
-				break;
-			case 'customer.subscription.deleted':
-				// await subscriptionService.handleCancellation(payload.data.object)
-				break;
-			default:
-				console.log(`[webhook] unhandled: ${payload.type}`);
-		}
-
-		return { received: true };
-	} catch (err) {
-		return handleError(event, err);
-	}
-});
-
-function verifyStripeSignature(
-	body: string,
-	sig: string,
-	secret: string,
-): boolean {
-	// Use official stripe SDK in production
-	return true;
-}
-```
+### `server/routes/api/webhooks/[feature].[http_method].ts`
 
 ---
 
 ## 17. Mailing
 
-### `server/services/mail.service.ts`
-
-```ts
-import nodemailer from 'nodemailer';
-import { env } from '../utils/env';
-
-const transporter = nodemailer.createTransport({
-	host: env.SMTP_HOST,
-	port: env.SMTP_PORT,
-	secure: env.SMTP_PORT === 465,
-	auth: {
-		user: env.SMTP_USER,
-		pass: env.SMTP_PASS,
-	},
-});
-
-export const mailService = {
-	async send(to: string, subject: string, html: string) {
-		return transporter.sendMail({
-			from: env.MAIL_FROM,
-			to,
-			subject,
-			html,
-		});
-	},
-
-	async sendWelcome(to: string, name: string) {
-		return this.send(
-			to,
-			'Welcome!',
-			`<h1>Hey ${name}!</h1><p>Thanks for joining.</p>`,
-		);
-	},
-
-	async sendPasswordReset(to: string, resetUrl: string) {
-		return this.send(
-			to,
-			'Reset your password',
-			`<p>Click <a href="${resetUrl}">here</a> to reset your password. Expires in 1 hour.</p>`,
-		);
-	},
-
-	// Called by the mail:queue scheduled task
-	async processQueue() {
-		// Extend with DB-backed queue (e.g. a `mail_queue` table) when needed
-		console.log('[mail] processQueue — no pending items');
-	},
-};
-```
-
-> For rich email templates, add `@react-email/components` and render to HTML before passing to `send()`.
-
----
-
-## 18. Config
-
-### `nitro.config.ts`
-
-```ts
-import { defineNitroConfig } from 'nitro/config';
-
-export default defineNitroConfig({
-	serverDir: './server',
-
-	scheduledTasks: {
-		'0 0 * * *': 'cleanup:sessions',
-		'0 * * * *': 'mail:queue',
-		'*/30 * * * *': 'health:check',
-	},
-
-	routeRules: {
-		'/api/**': { cors: true },
-		'/api/auth/**': { cors: true },
-	},
-
-	// Admin-only middleware scoped to /api/admin
-	handlers: [
-		{
-			route: '/api/admin/**',
-			handler: './server/middleware/admin-guard.ts',
-			middleware: true,
-		},
-	],
-});
-```
-
-### `server/plugins/db.ts`
-
-```ts
-export default definePlugin(async () => {
-	const { db } = await import('../db');
-	try {
-		await db.execute('select 1');
-		console.log('✅ Database connected');
-	} catch (err) {
-		console.error('❌ Database connection failed:', err);
-		process.exit(1);
-	}
-});
-```
+### `server/services/[feature].service.ts`
 
 ---
 
