@@ -1,6 +1,7 @@
 import type { H3Event } from 'nitro';
 import { AppError } from './errors';
 import { isDev } from './env';
+import type { PaginatedMeta } from './pagination';
 
 // ─────────────────────────────────────────────
 // Response shape contract
@@ -31,12 +32,12 @@ import { isDev } from './env';
  */
 export function successResponse<T>(
 	data: T,
-	meta?: Record<string, unknown>,
+	meta?: PaginatedMeta,
 ): SuccessResponse<T> {
 	return {
 		success: true,
 		data,
-		...(meta ? { meta } : {}),
+		meta: meta,
 	};
 }
 
@@ -145,7 +146,7 @@ export function handleError(event: H3Event, error: unknown): Response {
 export interface SuccessResponse<T> {
 	success: true;
 	data: T;
-	meta?: Record<string, unknown>;
+	meta?: PaginatedMeta;
 }
 
 export interface ErrorResponse {

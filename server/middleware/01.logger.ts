@@ -22,8 +22,8 @@ export default defineHandler((event) => {
 	const display =
 		isDev && parsedUrl.search ? `${path}${parsedUrl.search}` : path;
 
-	event.node?.res?.on('finish', () => {
-		const status = event.node?.res?.statusCode ?? 0;
+	event.runtime?.node?.res?.on('finish', () => {
+		const status = event.runtime?.node?.res?.statusCode ?? 0;
 		const ms = Date.now() - start;
 
 		// Colour-code by status band for quick visual scanning in terminal
