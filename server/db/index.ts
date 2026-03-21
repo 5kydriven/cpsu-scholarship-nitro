@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { env } from '../utils/env';
-import * as schema from './schema/schema-index';
+import * as schema from './schema/index';
 
 // ─────────────────────────────────────────────
 // Postgres connection
@@ -36,4 +36,4 @@ export type DB = typeof db;
 
 // Re-export schema so services can import from one place:
 //   import { db, students, applications } from '../db';
-export * from './schema/schema-index';
+export * from './schema/index';

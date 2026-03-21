@@ -1,50 +1,11 @@
 {
-  "id": "00000000-0000-0000-0000-000000000000",
-  "prevId": "",
+  "id": "89502cc1-8d5e-4d32-b1c5-bbb986c3b324",
+  "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.programs": {
-      "name": "programs",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "code": {
-          "name": "code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "programs_code_key": {
-          "columns": [
-            "code"
-          ],
-          "nullsNotDistinct": false,
-          "name": "programs_code_key"
-        }
-      },
-      "checkConstraints": {},
-      "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.uploads": {
-      "name": "uploads",
+    "public.addresses": {
+      "name": "addresses",
       "schema": "",
       "columns": {
         "id": {
@@ -54,117 +15,15 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "file_name": {
-          "name": "file_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "program_id": {
-          "name": "program_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "academic_year": {
-          "name": "academic_year",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "semester": {
-          "name": "semester",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "uploaded_at": {
-          "name": "uploaded_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "uploads_program_id_fkey": {
-          "name": "uploads_program_id_fkey",
-          "tableFrom": "uploads",
-          "tableTo": "programs",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "program_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {},
-      "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.scholars": {
-      "name": "scholars",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
+        "student_id": {
+          "name": "student_id",
           "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "scholar_identifier": {
-          "name": "scholar_identifier",
-          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "last_name": {
-          "name": "last_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "first_name": {
-          "name": "first_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "middle_name": {
-          "name": "middle_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ext_name": {
-          "name": "ext_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "sex": {
-          "name": "sex",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "contact": {
-          "name": "contact",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
+        "personnel_id": {
+          "name": "personnel_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -173,6 +32,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "barangay": {
+          "name": "barangay",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         },
         "city": {
           "name": "city",
@@ -198,79 +63,84 @@
           "primaryKey": false,
           "notNull": false,
           "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
         }
       },
-      "indexes": {
-        "idx_scholars_city": {
-          "name": "idx_scholars_city",
-          "columns": [
-            {
-              "expression": "city",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops",
-              "isExpression": false
-            }
+      "indexes": {},
+      "foreignKeys": {
+        "addresses_student_id_fkey": {
+          "name": "addresses_student_id_fkey",
+          "tableFrom": "addresses",
+          "tableTo": "students",
+          "columnsFrom": [
+            "student_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
-        "idx_scholars_province": {
-          "name": "idx_scholars_province",
-          "columns": [
-            {
-              "expression": "province",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops",
-              "isExpression": false
-            }
+        "addresses_personnel_id_fkey": {
+          "name": "addresses_personnel_id_fkey",
+          "tableFrom": "addresses",
+          "tableTo": "personnels",
+          "columnsFrom": [
+            "personnel_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "scholars_unique_identity": {
-          "name": "scholars_unique_identity",
-          "columns": [
-            {
-              "expression": "scholar_identifier",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops",
-              "isExpression": false
-            }
+          "columnsTo": [
+            "id"
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
-      "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "scholars_sex_check": {
-          "name": "scholars_sex_check",
-          "value": "sex = ANY (ARRAY['male'::text, 'female'::text])"
+      "uniqueConstraints": {
+        "addresses_student_id_key": {
+          "name": "addresses_student_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "student_id"
+          ]
+        },
+        "addresses_personnel_id_key": {
+          "name": "addresses_personnel_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "personnel_id"
+          ]
         }
       },
       "policies": {},
+      "checkConstraints": {
+        "addresses_owner_check": {
+          "name": "addresses_owner_check",
+          "value": "(\n        (student_id is not null and personnel_id is null) or\n        (student_id is null and personnel_id is not null)\n      )"
+        }
+      },
       "isRLSEnabled": false
     },
-    "public.enrollments": {
-      "name": "enrollments",
+    "auth.users": {
+      "name": "users",
+      "schema": "auth",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.personnels": {
+      "name": "personnels",
       "schema": "",
       "columns": {
         "id": {
@@ -280,51 +150,63 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "scholar_id": {
-          "name": "scholar_id",
+        "user_id": {
+          "name": "user_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "program_id": {
-          "name": "program_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "course": {
-          "name": "course",
+        "first_name": {
+          "name": "first_name",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "year_level": {
-          "name": "year_level",
-          "type": "integer",
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "batch": {
-          "name": "batch",
+        "middle_name": {
+          "name": "middle_name",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "award_no": {
-          "name": "award_no",
+        "ext_name": {
+          "name": "ext_name",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "app_no": {
-          "name": "app_no",
+        "sex": {
+          "name": "sex",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "upload_id": {
-          "name": "upload_id",
-          "type": "uuid",
+        "birthdate": {
+          "name": "birthdate",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_number": {
+          "name": "contact_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "department": {
+          "name": "department",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "position": {
+          "name": "position",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -334,196 +216,152 @@
           "primaryKey": false,
           "notNull": false,
           "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
         }
       },
-      "indexes": {
-        "enrollments_unique": {
-          "name": "enrollments_unique",
-          "columns": [
-            {
-              "expression": "scholar_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            },
-            {
-              "expression": "program_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            },
-            {
-              "expression": "batch",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_enrollments_batch": {
-          "name": "idx_enrollments_batch",
-          "columns": [
-            {
-              "expression": "batch",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_enrollments_course": {
-          "name": "idx_enrollments_course",
-          "columns": [
-            {
-              "expression": "course",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_enrollments_program": {
-          "name": "idx_enrollments_program",
-          "columns": [
-            {
-              "expression": "program_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_enrollments_year_level": {
-          "name": "idx_enrollments_year_level",
-          "columns": [
-            {
-              "expression": "year_level",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_filter_combo": {
-          "name": "idx_filter_combo",
-          "columns": [
-            {
-              "expression": "program_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            },
-            {
-              "expression": "batch",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            },
-            {
-              "expression": "course",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            },
-            {
-              "expression": "year_level",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
-        "enrollments_scholar_id_fkey": {
-          "name": "enrollments_scholar_id_fkey",
-          "tableFrom": "enrollments",
-          "tableTo": "scholars",
-          "schemaTo": "public",
+        "personnel_user_id_fkey": {
+          "name": "personnel_user_id_fkey",
+          "tableFrom": "personnels",
+          "tableTo": "users",
+          "schemaTo": "auth",
           "columnsFrom": [
-            "scholar_id"
+            "user_id"
           ],
           "columnsTo": [
             "id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "personnel_user_id_key": {
+          "name": "personnel_user_id_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.student_parents": {
+      "name": "student_parents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
-        "enrollments_program_id_fkey": {
-          "name": "enrollments_program_id_fkey",
-          "tableFrom": "enrollments",
-          "tableTo": "programs",
-          "schemaTo": "public",
+        "student_id": {
+          "name": "student_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "middle_name": {
+          "name": "middle_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ext_name": {
+          "name": "ext_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "occupation": {
+          "name": "occupation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "monthly_income": {
+          "name": "monthly_income",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_number": {
+          "name": "contact_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "student_parents_student_id_fkey": {
+          "name": "student_parents_student_id_fkey",
+          "tableFrom": "student_parents",
+          "tableTo": "students",
           "columnsFrom": [
-            "program_id"
+            "student_id"
           ],
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "enrollments_upload_id_fkey": {
-          "name": "enrollments_upload_id_fkey",
-          "tableFrom": "enrollments",
-          "tableTo": "uploads",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "upload_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {},
+      "uniqueConstraints": {
+        "student_parents_student_type_key": {
+          "name": "student_parents_student_type_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "student_id",
+            "type"
+          ]
+        }
+      },
       "policies": {},
+      "checkConstraints": {
+        "student_parents_type_check": {
+          "name": "student_parents_type_check",
+          "value": "type = ANY (ARRAY['father'::text, 'mother'::text, 'guardian'::text])"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.students": {
@@ -537,20 +375,20 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "student_id": {
-          "name": "student_id",
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "first_name": {
+          "name": "first_name",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "last_name": {
           "name": "last_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "given_name": {
-          "name": "given_name",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -591,6 +429,19 @@
           "primaryKey": false,
           "notNull": false
         },
+        "year_level": {
+          "name": "year_level",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -599,32 +450,15 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "students_sex_idx": {
-          "name": "students_sex_idx",
-          "columns": [
-            {
-              "expression": "sex",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
-        "students_auth_fk": {
-          "name": "students_auth_fk",
+        "students_user_id_fkey": {
+          "name": "students_user_id_fkey",
           "tableFrom": "students",
           "tableTo": "users",
           "schemaTo": "auth",
           "columnsFrom": [
-            "id"
+            "user_id"
           ],
           "columnsTo": [
             "id"
@@ -635,600 +469,16 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "students_student_id_key": {
-          "columns": [
-            "student_id"
-          ],
+        "students_user_id_key": {
+          "name": "students_user_id_key",
           "nullsNotDistinct": false,
-          "name": "students_student_id_key"
-        },
-        "students_email_key": {
           "columns": [
-            "email"
-          ],
-          "nullsNotDistinct": false,
-          "name": "students_email_key"
-        }
-      },
-      "checkConstraints": {
-        "students_sex_check": {
-          "name": "students_sex_check",
-          "value": "sex = ANY (ARRAY['male'::text, 'female'::text])"
+            "user_id"
+          ]
         }
       },
       "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.application_addresses": {
-      "name": "application_addresses",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "application_id": {
-          "name": "application_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "street": {
-          "name": "street",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "barangay": {
-          "name": "barangay",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "zipcode": {
-          "name": "zipcode",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "application_addresses_application_id_fkey": {
-          "name": "application_addresses_application_id_fkey",
-          "tableFrom": "application_addresses",
-          "tableTo": "applications",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "application_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "checkConstraints": {},
-      "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.application_documents": {
-      "name": "application_documents",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "application_id": {
-          "name": "application_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "file_url": {
-          "name": "file_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "idx_docs_app": {
-          "name": "idx_docs_app",
-          "columns": [
-            {
-              "expression": "application_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "uuid_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "application_documents_application_id_fkey": {
-          "name": "application_documents_application_id_fkey",
-          "tableFrom": "application_documents",
-          "tableTo": "applications",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "application_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "application_documents_type_check": {
-          "name": "application_documents_type_check",
-          "value": "type = ANY (ARRAY['disability'::text, 'ip_group'::text])"
-        }
-      },
-      "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.application_statuses": {
-      "name": "application_statuses",
-      "schema": "",
-      "columns": {
-        "code": {
-          "name": "code",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {},
-      "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.application_parents": {
-      "name": "application_parents",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "application_id": {
-          "name": "application_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_name": {
-          "name": "last_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "given_name": {
-          "name": "given_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "middle_name": {
-          "name": "middle_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "idx_parent_app": {
-          "name": "idx_parent_app",
-          "columns": [
-            {
-              "expression": "application_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "uuid_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "application_parents_application_id_fkey": {
-          "name": "application_parents_application_id_fkey",
-          "tableFrom": "application_parents",
-          "tableTo": "applications",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "application_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "application_parents_type_check": {
-          "name": "application_parents_type_check",
-          "value": "type = ANY (ARRAY['father'::text, 'mother'::text])"
-        }
-      },
-      "policies": {},
-      "isRLSEnabled": false
-    },
-    "public.applications": {
-      "name": "applications",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "student_id": {
-          "name": "student_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "seq": {
-          "name": "seq",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "program_name": {
-          "name": "program_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "year_level": {
-          "name": "year_level",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "has_disability": {
-          "name": "has_disability",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "has_ip_group": {
-          "name": "has_ip_group",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'pending'"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
-        },
-        "batch": {
-          "name": "batch",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "award_no": {
-          "name": "award_no",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "app_no": {
-          "name": "app_no",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "idx_app_created_at": {
-          "name": "idx_app_created_at",
-          "columns": [
-            {
-              "expression": "created_at",
-              "asc": false,
-              "nulls": "first",
-              "opclass": "timestamp_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_app_program": {
-          "name": "idx_app_program",
-          "columns": [
-            {
-              "expression": "program_name",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_app_program_year": {
-          "name": "idx_app_program_year",
-          "columns": [
-            {
-              "expression": "program_name",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            },
-            {
-              "expression": "year_level",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_app_status": {
-          "name": "idx_app_status",
-          "columns": [
-            {
-              "expression": "status",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_app_student": {
-          "name": "idx_app_student",
-          "columns": [
-            {
-              "expression": "student_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "uuid_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_app_student_status": {
-          "name": "idx_app_student_status",
-          "columns": [
-            {
-              "expression": "student_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops",
-              "isExpression": false
-            },
-            {
-              "expression": "status",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_app_year": {
-          "name": "idx_app_year",
-          "columns": [
-            {
-              "expression": "year_level",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_application_filter": {
-          "name": "idx_application_filter",
-          "columns": [
-            {
-              "expression": "status",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            },
-            {
-              "expression": "program_name",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            },
-            {
-              "expression": "year_level",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "int4_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "pending_queue_fast": {
-          "name": "pending_queue_fast",
-          "columns": [
-            {
-              "expression": "status",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "text_ops",
-              "isExpression": false
-            },
-            {
-              "expression": "created_at",
-              "asc": false,
-              "nulls": "first",
-              "opclass": "timestamp_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "where": "(status = 'pending'::text)",
-          "with": {}
-        },
-        "unique_approved_application": {
-          "name": "unique_approved_application",
-          "columns": [
-            {
-              "expression": "id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "uuid_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "where": "(status = 'approved'::text)",
-          "with": {}
-        },
-        "unique_pending_application": {
-          "name": "unique_pending_application",
-          "columns": [
-            {
-              "expression": "student_id",
-              "asc": true,
-              "nulls": "last",
-              "opclass": "uuid_ops",
-              "isExpression": false
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "where": "(status = 'pending'::text)",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "applications_student_id_fkey": {
-          "name": "applications_student_id_fkey",
-          "tableFrom": "applications",
-          "tableTo": "students",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "student_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "applications_status_check": {
-          "name": "applications_status_check",
-          "value": "status = ANY (ARRAY['pending'::text, 'approved'::text, 'rejected'::text])"
-        }
-      },
-      "policies": {},
       "isRLSEnabled": false
     }
   },
@@ -1239,11 +489,8 @@
   "policies": {},
   "views": {},
   "_meta": {
+    "columns": {},
     "schemas": {},
-    "tables": {},
-    "columns": {}
-  },
-  "internal": {
     "tables": {}
   }
 }

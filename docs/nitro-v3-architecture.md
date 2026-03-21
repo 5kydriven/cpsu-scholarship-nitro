@@ -229,20 +229,25 @@ export const env = parsed.data;
 ### `.env`
 
 ```env
-# Supabase
-SUPABASE_URL=https://[ref].supabase.co
-SUPABASE_ANON_KEY=your-anon-key
+NODE_ENV=development
+APP_URL=http://localhost:3000
+
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# Drizzle — ALWAYS use direct (port 5432), not pooler
-DATABASE_URL=postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
 
-# Mail
-SMTP_HOST=smtp.yourprovider.com
+SMTP_HOST=smtp.yourmailprovider.com
 SMTP_PORT=587
-SMTP_USER=you@example.com
-SMTP_PASS=yourpassword
-MAIL_FROM=no-reply@yourdomain.com
+SMTP_USER=you@yourdomain.com
+SMTP_PASS=your-smtp-password
+MAIL_FROM=no-reply@cpsu-scholarship.edu.ph
+
+STORAGE_BUCKET_DOCUMENTS=http://127.0.0.1:54321/storage/v1/s3
+
+EXPORT_HEADER_TITLE=Central Philippine State University
+EXPORT_HEADER_SUBTITLE=Scholarship Management System
 ```
 
 > ⚠️ Never use the Supabase connection pooler URL for Drizzle — it breaks migrations.
@@ -257,7 +262,7 @@ MAIL_FROM=no-reply@yourdomain.com
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { env } from '../utils/env';
-import * as schema from './schema/schema-index';
+import * as schema from './schema/index';
 
 const client = postgres(env.DATABASE_URL, {
 	prepare: false,
@@ -268,7 +273,7 @@ export const db = drizzle(client, { schema });
 
 export type DB = typeof db;
 
-export * from './schema/schema-index';
+export * from './schema/index';
 ```
 
 ### Migration commands
