@@ -20,6 +20,7 @@ import type { AppRole } from '../types/h3';
 const PUBLIC_ROUTES: string[] = [
 	'/api/health',
 	'/api/auth/register', // Phase 2A — student self-registration
+	'/',
 ];
 
 export default defineHandler(async (event) => {
@@ -102,4 +103,6 @@ export default defineHandler(async (event) => {
 	} else {
 		event.context.student = null;
 	}
+
+	return;
 });

@@ -22,7 +22,14 @@ import type { AppRole } from '../types/h3';
 // Extend this set when adding staff or super-admin roles.
 const ALLOWED_ROLES: AppRole[] = ['admin'];
 
+const PUBLIC_ROUTES: string[] = ['/api/health', '/api/auth/register', '/'];
+
 export default defineHandler(async (event) => {
+	const url = new URL(event.req.url);
+	const path = url.pathname;
+
+	if (PUBLIC_ROUTES.some((r) => path.startsWith(r))) return;
+
 	const role = event.context.role;
 
 	if (!role || !ALLOWED_ROLES.includes(role)) {

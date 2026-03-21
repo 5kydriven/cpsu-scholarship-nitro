@@ -19,15 +19,15 @@ export default defineConfig({
 	],
 
 	// ── Scheduled tasks (Phase 5) ─────────────
-	scheduledTasks: {
-		// Check scholar qualification status at start of each semester
-		// Runs at midnight on the 1st of June and November
-		'0 0 1 6,11 *': 'scholars:qualify-check',
+	// scheduledTasks: {
+	// 	// Check scholar qualification status at start of each semester
+	// 	// Runs at midnight on the 1st of June and November
+	// 	'0 0 1 6,11 *': 'scholars:qualify-check',
 
-		// Process pending mail queue every hour
-		'0 * * * *': 'mail:queue',
+	// 	// Process pending mail queue every hour
+	// 	'0 * * * *': 'mail:queue',
 
-		// Health check every 30 minutes
-		'*/30 * * * *': 'health:check',
-	},
+	// 	// Health check every 30 minutes
+	// 	'*/30 * * * *': 'health:check',
+	// },
 });

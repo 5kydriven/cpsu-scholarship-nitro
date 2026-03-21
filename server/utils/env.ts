@@ -49,7 +49,7 @@ const envSchema = z.object({
 	// ── AI (Claude API) ──────────────────────
 	// Phase 6 — ai.service.ts (stub until Phase 6 is implemented)
 	// Optional: validation only warns, does not crash the server.
-	ANTHROPIC_API_KEY: z.string().min(1).optional(),
+	// ANTHROPIC_API_KEY: z.string().min(1).optional(),
 });
 
 // ─────────────────────────────────────────────
@@ -79,11 +79,11 @@ if (!parsed.success) {
 }
 
 // Warn about missing AI key even on success (non-fatal)
-if (!parsed.data.ANTHROPIC_API_KEY) {
-	console.warn(
-		'⚠️   ANTHROPIC_API_KEY is not set — AI selection (Phase 6) will be unavailable.',
-	);
-}
+// if (!parsed.data.ANTHROPIC_API_KEY) {
+// 	console.warn(
+// 		'⚠️   ANTHROPIC_API_KEY is not set — AI selection (Phase 6) will be unavailable.',
+// 	);
+// }
 
 // ─────────────────────────────────────────────
 // Export

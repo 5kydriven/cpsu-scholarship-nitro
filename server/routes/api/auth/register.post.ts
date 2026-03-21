@@ -1,19 +1,10 @@
 import { defineHandler } from 'nitro';
-import { registerStudentSchema } from '../../../validators/application.validator';
-import { createdResponse, handleError } from '../../../utils/response';
-import { ValidationError } from '../../../utils/errors';
+import { BadRequestError, ValidationError } from '../../../utils/errors';
+import { handleError, successResponse } from '#server/utils/response.ts';
+import { supabase } from '#server/lib/supabase.ts';
 import { studentService } from '#server/service/student.service.ts';
+import { registerStudentSchema } from '#server/validators/student.validation.ts';
 import z from 'zod';
-
-// ─────────────────────────────────────────────
-// POST /api/auth/register
-//
-// Public route — listed in PUBLIC_ROUTES in 02.auth.ts.
-// No Bearer token required.
-//
-// Creates a Supabase auth user + students DB row.
-// The atomicity strategy is in student.service.ts.
-// ─────────────────────────────────────────────
 
 export default defineHandler(async (event) => {
 	try {
@@ -24,15 +15,29 @@ export default defineHandler(async (event) => {
 			throw new ValidationError(z.treeifyError(parsed.error));
 		}
 
-		const student = await studentService.register(parsed.data);
-
-		return createdResponse({
-			id: student.id,
-			studentId: student.studentId,
-			lastName: student.lastName,
-			givenName: student.givenName,
-			email: student.email,
+		const { data, error } = await supabase.auth.admin.createUser({
+			email: parsed.data.email,
+			password: parsed.data.password,
+			email_confirm: true,
+			phone: parsed.data.contactNumber,
+			user_metadata: {
+				role: 'student',
+			},
 		});
+
+		if (error) {
+			throw new BadRequestError(error.message);
+		}
+
+		const student = await studentService.create({
+			userId: data.user?.id ?? '',
+			lastName: parsed.data.lastName,
+			firstName: parsed.data.firstName,
+			middleName: parsed.data.middleName,
+			yearLevel: parsed.data.yearLevel,
+		});
+
+		return successResponse(student);
 	} catch (err) {
 		return handleError(event, err);
 	}
