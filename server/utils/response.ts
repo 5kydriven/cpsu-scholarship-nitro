@@ -2,6 +2,7 @@ import type { H3Event } from 'nitro';
 import { AppError } from './errors';
 import { isDev } from './env';
 import type { PaginatedMeta } from './pagination';
+import { convertKeysToSnakeCase } from './case-converters';
 
 // ─────────────────────────────────────────────
 // Response shape contract
@@ -34,9 +35,10 @@ export function successResponse<T>(
 	data: T,
 	meta?: PaginatedMeta,
 ): SuccessResponse<T> {
+	const converted = convertKeysToSnakeCase(data);
 	return {
 		success: true,
-		data,
+		data: converted,
 		meta: meta,
 	};
 }

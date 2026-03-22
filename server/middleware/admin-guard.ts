@@ -25,16 +25,16 @@ const ALLOWED_ROLES: AppRole[] = ['admin'];
 const PUBLIC_ROUTES: string[] = ['/api/health', '/api/auth/register', '/'];
 
 export default defineHandler(async (event) => {
-	const url = new URL(event.req.url);
-	const path = url.pathname;
+	// const url = new URL(event.req.url);
+	// const path = url.pathname;
 
-	if (PUBLIC_ROUTES.some((r) => path.startsWith(r))) return;
+	// if (PUBLIC_ROUTES.some((r) => path.startsWith(r))) return;
 
-	const role = event.context.role;
+	// const role = event.context.role;
 
-	if (!role || !ALLOWED_ROLES.includes(role)) {
-		return handleError(event, new ForbiddenError('Admin access required'));
-	}
+	// if (!role || !ALLOWED_ROLES.includes(role)) {
+	// 	return handleError(event, new ForbiddenError('Admin access required'));
+	// }
 
 	return;
 });

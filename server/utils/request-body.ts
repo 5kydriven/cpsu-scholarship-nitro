@@ -1,3 +1,4 @@
+import camelize from 'camelize';
 import type { H3Event } from 'nitro';
 
 export async function requestBody(
@@ -26,9 +27,10 @@ export async function requestBody(
 				data[key] = value;
 			}
 		}
-		return data;
+		return camelize(data);
 	}
 
 	// JSON
-	return await event.req.json();
+	const data = await event.req.json();
+	return camelize(data);
 }

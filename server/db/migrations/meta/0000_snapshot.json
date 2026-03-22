@@ -1,5 +1,5 @@
 {
-  "id": "89502cc1-8d5e-4d32-b1c5-bbb986c3b324",
+  "id": "74255328-9a0f-4e2f-8523-69cdc0362a56",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -75,7 +75,7 @@
             "student_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -88,7 +88,7 @@
             "personnel_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -143,17 +143,10 @@
       "name": "personnels",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
         "user_id": {
           "name": "user_id",
           "type": "uuid",
-          "primaryKey": false,
+          "primaryKey": true,
           "notNull": true
         },
         "first_name": {
@@ -220,8 +213,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "personnel_user_id_fkey": {
-          "name": "personnel_user_id_fkey",
+        "personnels_user_id_users_id_fk": {
+          "name": "personnels_user_id_users_id_fk",
           "tableFrom": "personnels",
           "tableTo": "users",
           "schemaTo": "auth",
@@ -236,15 +229,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "personnel_user_id_key": {
-          "name": "personnel_user_id_key",
-          "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -338,7 +323,7 @@
             "student_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -368,17 +353,10 @@
       "name": "students",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
         "user_id": {
           "name": "user_id",
           "type": "uuid",
-          "primaryKey": false,
+          "primaryKey": true,
           "notNull": true
         },
         "first_name": {
@@ -452,8 +430,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "students_user_id_fkey": {
-          "name": "students_user_id_fkey",
+        "students_user_id_users_id_fk": {
+          "name": "students_user_id_users_id_fk",
           "tableFrom": "students",
           "tableTo": "users",
           "schemaTo": "auth",
@@ -468,15 +446,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "students_user_id_key": {
-          "name": "students_user_id_key",
-          "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

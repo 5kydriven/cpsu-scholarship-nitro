@@ -9,12 +9,10 @@ export const registerStudentSchema = z.object({
 	extName: z.string().max(20).optional(),
 	contactNumber: z
 		.string()
-		.regex(
-			/^09\d{9}$/,
-			'Contact number must be a valid PH mobile number (09XXXXXXXXX)',
-		),
+		.regex(/^09\d{9}$/, 'Invalid PH mobile number')
+		.transform((v) => v.replace(/^0/, '+63')),
 	sex: z.enum(['male', 'female']),
-	yearLevel: z.number().int().min(1).max(6),
+	yearLevel: z.coerce.number().int().min(1).max(6),
 });
 
 export type RegisterStudentInput = z.infer<typeof registerStudentSchema>;

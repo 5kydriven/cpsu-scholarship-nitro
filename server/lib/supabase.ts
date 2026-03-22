@@ -1,12 +1,39 @@
 import { createClient } from '@supabase/supabase-js';
 import { env } from '../utils/env';
+import type { Database } from '#server/types/database.types.js';
 
 // ─────────────────────────────────────────────
 // Standard client — used for auth token verification.
 // Respects Row-Level Security (RLS).
 // DO NOT use this for admin operations.
 // ─────────────────────────────────────────────
-export const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+export const supabase = createClient<Database>(
+	env.SUPABASE_URL,
+	env.SUPABASE_ANON_KEY,
+	// {
+	// 	auth: {
+	// 		autoRefreshToken: false,
+	// 		persistSession: false,
+	// 		detectSessionInUrl: false,
+	// 	},
+	// },
+);
+
+export function createUserClient(token?: string) {
+	return createClient<Database>(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+		global: token
+			? {
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+			  }
+			: {},
+		auth: {
+			persistSession: false,
+			autoRefreshToken: false,
+		},
+	});
+}
 
 // ─────────────────────────────────────────────
 // Admin client — bypasses RLS entirely.
@@ -16,15 +43,9 @@ export const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
 //   • Storage operations (Phase 3 — application documents)
 // Never expose this client to the frontend.
 // ─────────────────────────────────────────────
-export const supabaseAdmin = createClient(
+export const supabaseAdmin = createClient<Database>(
 	env.SUPABASE_URL,
 	env.SUPABASE_SERVICE_ROLE_KEY,
-	{
-		auth: {
-			autoRefreshToken: false,
-			persistSession: false,
-		},
-	},
 );
 
 // ─────────────────────────────────────────────

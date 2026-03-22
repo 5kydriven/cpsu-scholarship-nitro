@@ -1,49 +1,69 @@
 import { defineHandler } from 'nitro';
 import { eq } from 'drizzle-orm';
-import { supabase } from '../lib/supabase';
+import { createUserClient } from '../lib/supabase';
 import { db, students } from '../db';
 import { UnauthorizedError } from '../utils/errors';
 import { handleError } from '../utils/response';
 import { isDev } from '../utils/env';
 import type { AppRole } from '../types/h3';
-
-// ─────────────────────────────────────────────
-// 02.auth.ts  (Phase 2 — updated)
-//
-// Changes from Phase 1:
-//   • POST /api/auth/register added to PUBLIC_ROUTES
-//   • Role resolution is now explicit — unrecognised
-//     roles log a dev warning instead of silently
-//     falling through to 'student'
-// ─────────────────────────────────────────────
+import { getCookie, setCookie } from 'h3';
+import type { User } from '@supabase/supabase-js';
 
 const PUBLIC_ROUTES: string[] = [
 	'/api/health',
-	'/api/auth/register', // Phase 2A — student self-registration
-	'/',
+	'/api/auth/register',
+	'/api/auth/login',
 ];
 
 export default defineHandler(async (event) => {
 	const url = new URL(event.req.url);
 	const path = url.pathname;
+	const isPublic = PUBLIC_ROUTES.some((route) => path.startsWith(route));
 
-	// ── Public route bypass ───────────────────
-	if (PUBLIC_ROUTES.some((r) => path.startsWith(r))) return;
+	if (isPublic) return;
 
-	// ── Extract Bearer token ──────────────────
-	const authHeader = event.req.headers.get('authorization');
+	const access = getCookie(event, 'sb-access-token');
+	const refresh = getCookie(event, 'sb-refresh-token');
 
-	if (!authHeader?.startsWith('Bearer ')) {
-		return handleError(
-			event,
-			new UnauthorizedError('Missing or malformed Authorization header'),
-		);
+	let supabase = createUserClient(access);
+
+	let { data, error } = await supabase.auth.getUser();
+
+	// 🔥 access token expired → refresh automatically
+	if (error && refresh) {
+		const refreshClient = createUserClient();
+
+		const { data: refreshData, error: refreshError } =
+			await refreshClient.auth.refreshSession({
+				refresh_token: refresh,
+			});
+
+		if (!refreshError) {
+			const newAccess = refreshData.session?.access_token ?? '';
+			const newRefresh = refreshData.session?.refresh_token ?? '';
+
+			setCookie(event, 'sb-access-token', newAccess, {
+				httpOnly: true,
+				secure: true,
+				sameSite: 'lax',
+				path: '/',
+			});
+
+			setCookie(event, 'sb-refresh-token', newRefresh, {
+				httpOnly: true,
+				secure: true,
+				sameSite: 'lax',
+				path: '/',
+			});
+
+			supabase = createUserClient(newAccess);
+
+			const { data: retryUser } = await supabase.auth.getUser();
+
+			event.context.user = retryUser.user as User;
+			return;
+		}
 	}
-
-	const token = authHeader.slice(7);
-
-	// ── Verify JWT with Supabase ──────────────
-	const { data, error } = await supabase.auth.getUser(token);
 
 	if (error || !data.user) {
 		return handleError(
@@ -53,6 +73,8 @@ export default defineHandler(async (event) => {
 	}
 
 	const authUser = data.user;
+
+	console.log(authUser);
 
 	// ── Resolve role — explicit, no silent fallthrough ───
 	// Roles live in auth.users.user_metadata.role.

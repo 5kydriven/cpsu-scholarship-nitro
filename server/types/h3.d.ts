@@ -37,7 +37,6 @@ export type AppRole = 'admin' | 'student' | 'staff';
 export interface AppStudent {
 	/** UUID — same as auth.users.id (students_auth_fk) */
 	id: string;
-	userId: string;
 
 	lastName: string;
 	firstName: string;
