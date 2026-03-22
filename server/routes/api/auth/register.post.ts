@@ -20,13 +20,13 @@ export default defineHandler(async (event) => {
 			email: parsed.data.email,
 			password: parsed.data.password,
 			email_confirm: true,
-			phone: parsed.data.contactNumber,
+			// phone: parsed.data.contactNumber,
 			user_metadata: {
 				role: 'student',
-				firstName: parsed.data.firstName,
-				lastName: parsed.data.lastName,
-				middleName: parsed.data.middleName,
-				extName: parsed.data.extName,
+				// firstName: parsed.data.firstName,
+				// lastName: parsed.data.lastName,
+				// middleName: parsed.data.middleName,
+				// extName: parsed.data.extName,
 			},
 		});
 
@@ -38,13 +38,13 @@ export default defineHandler(async (event) => {
 
 		const student = await studentService.create({
 			id: data.user.id,
-			lastName: parsed.data.lastName,
-			firstName: parsed.data.firstName,
-			middleName: parsed.data.middleName,
-			yearLevel: parsed.data.yearLevel,
-			sex: parsed.data.sex,
-			contactNumber: parsed.data.contactNumber,
-			extName: parsed.data.extName,
+			// lastName: parsed.data.lastName,
+			// firstName: parsed.data.firstName,
+			// middleName: parsed.data.middleName,
+			// yearLevel: parsed.data.yearLevel,
+			// sex: parsed.data.sex,
+			// contactNumber: parsed.data.contactNumber,
+			// extName: parsed.data.extName,
 			email: parsed.data.email,
 		});
 

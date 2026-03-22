@@ -44,14 +44,14 @@ export default defineHandler(async (event) => {
 
 			setCookie(event, 'sb-access-token', newAccess, {
 				httpOnly: true,
-				secure: true,
+				secure: process.env.NODE_ENV === 'production',
 				sameSite: 'lax',
 				path: '/',
 			});
 
 			setCookie(event, 'sb-refresh-token', newRefresh, {
 				httpOnly: true,
-				secure: true,
+				secure: process.env.NODE_ENV === 'production',
 				sameSite: 'lax',
 				path: '/',
 			});

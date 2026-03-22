@@ -4,7 +4,18 @@ export default defineConfig({
 	serverDir: './server',
 	// ── Route rules ───────────────────────────
 	routeRules: {
-		'/api/**': { cors: true },
+		'/api/**': {
+			cors: true,
+			headers: {
+				'Access-Control-Allow-Origin': 'http://localhost:3000',
+				'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
+				'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+				'Access-Control-Allow-Credentials': 'true',
+			},
+		},
+		'/': {
+			basicAuth: false,
+		},
 	},
 
 	// ── Admin-only middleware ─────────────────
@@ -17,6 +28,10 @@ export default defineConfig({
 			middleware: true,
 		},
 	],
+
+	devServer: {
+		port: 3001,
+	},
 
 	// ── Scheduled tasks (Phase 5) ─────────────
 	// scheduledTasks: {

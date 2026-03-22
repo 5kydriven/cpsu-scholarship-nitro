@@ -22,7 +22,7 @@ export default defineHandler(async (event) => {
 
 		setCookie(event, 'sb-access-token', access, {
 			httpOnly: true,
-			secure: true,
+			secure: process.env.NODE_ENV === 'production',
 			sameSite: 'lax',
 			path: '/',
 			maxAge: 60 * 60,
@@ -30,7 +30,7 @@ export default defineHandler(async (event) => {
 
 		setCookie(event, 'sb-refresh-token', refresh, {
 			httpOnly: true,
-			secure: true,
+			secure: process.env.NODE_ENV === 'production',
 			sameSite: 'lax',
 			path: '/',
 			maxAge: 60 * 60 * 24 * 30,
@@ -45,6 +45,7 @@ export default defineHandler(async (event) => {
 			refreshToken: data.session.refresh_token,
 		});
 	} catch (err) {
+		console.log(err);
 		return handleError(event, err);
 	}
 });
