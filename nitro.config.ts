@@ -13,9 +13,6 @@ export default defineConfig({
 				'Access-Control-Allow-Credentials': 'true',
 			},
 		},
-		'/': {
-			basicAuth: false,
-		},
 	},
 
 	// ── Admin-only middleware ─────────────────
