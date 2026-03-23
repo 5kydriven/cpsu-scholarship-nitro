@@ -9,21 +9,21 @@ import type { AppRole } from '../types/h3';
 import { getCookie, setCookie } from 'h3';
 import type { User } from '@supabase/supabase-js';
 
-const PUBLIC_ROUTES: string[] = ['/', '/api/auth/register', '/api/auth/login'];
+const PUBLIC_ROUTES: string[] = ['/auth/register', '/auth/login'];
 
 export default defineHandler(async (event) => {
 	const url = new URL(event.req.url);
 	const path = url.pathname;
 	const isPublic = PUBLIC_ROUTES.some((route) => path.startsWith(route));
 
-	if (isPublic) return;
+	if (isPublic || path === '/') return;
 
 	const access = getCookie(event, 'sb-access-token');
 	const refresh = getCookie(event, 'sb-refresh-token');
 
 	let supabase = createUserClient(access);
 
-	let { data, error } = await supabase.auth.getUser();
+	const { data, error } = await supabase.auth.getUser();
 
 	// 🔥 access token expired → refresh automatically
 	if (error && refresh) {
@@ -69,8 +69,6 @@ export default defineHandler(async (event) => {
 	}
 
 	const authUser = data.user;
-
-	console.log(authUser);
 
 	// ── Resolve role — explicit, no silent fallthrough ───
 	// Roles live in auth.users.user_metadata.role.
