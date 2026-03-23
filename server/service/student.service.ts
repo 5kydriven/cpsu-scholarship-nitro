@@ -20,4 +20,6 @@ export const studentService = {
 		if (!student) throw new NotFoundError('Student');
 		return student;
 	},
+
+	async update(id: string, student: NewStudent) {},
 };

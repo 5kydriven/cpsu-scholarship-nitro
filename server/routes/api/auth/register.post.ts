@@ -30,21 +30,12 @@ export default defineHandler(async (event) => {
 			},
 		});
 
-		console.log(error);
-
 		if (error) {
 			throw new BadRequestError(error.message);
 		}
 
 		const student = await studentService.create({
 			id: data.user.id,
-			// lastName: parsed.data.lastName,
-			// firstName: parsed.data.firstName,
-			// middleName: parsed.data.middleName,
-			// yearLevel: parsed.data.yearLevel,
-			// sex: parsed.data.sex,
-			// contactNumber: parsed.data.contactNumber,
-			// extName: parsed.data.extName,
 			email: parsed.data.email,
 		});
 
