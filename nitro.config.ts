@@ -13,21 +13,26 @@ export default defineConfig({
 				'Access-Control-Allow-Credentials': 'true',
 			},
 		},
+		'/': {
+			headers: {
+				'x-skip-middleware': 'true',
+			},
+		},
 	},
 
 	// ── Admin-only middleware ─────────────────
 	// admin-guard.ts runs AFTER 02.auth.ts (global middleware runs first).
 	// It is scoped only to /api/admin/** — no overhead on student routes.
 	handlers: [
-		{
-			route: '/api/admin/**',
-			handler: './server/middleware/admin-guard.ts',
-			middleware: true,
-		},
+		// {
+		// 	route: '/api/admin/**',
+		// 	handler: './server/middleware/admin-guard.ts',
+		// 	middleware: true,
+		// },
 	],
 
 	devServer: {
-		port: 3001,
+		port: 3000,
 	},
 
 	// ── Scheduled tasks (Phase 5) ─────────────

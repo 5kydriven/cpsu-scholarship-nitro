@@ -7,6 +7,7 @@ export default defineHandler(async (event) => {
 		if (!event.context.user) {
 			throw new UnauthorizedError('Unauthorized');
 		}
+		console.log(event.context.student);
 		return successResponse(event.context.user);
 	} catch (err) {
 		return handleError(event, err);
