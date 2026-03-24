@@ -15,6 +15,13 @@
       "when": 1774193268141,
       "tag": "0001_natural_forgotten_one",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774360245048,
+      "tag": "0002_thick_the_captain",
+      "breakpoints": true
     }
   ]
 }

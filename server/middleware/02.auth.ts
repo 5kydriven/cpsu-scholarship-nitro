@@ -98,26 +98,12 @@ export default defineHandler(async (event) => {
 	event.context.role = role;
 
 	// ── Load student row (students only) ─────
-	// Admins and staff have no students row — that is intentional.
 	if (role === 'student') {
 		const student = await db.query.students.findFirst({
 			where: eq(students.id, authUser.id),
 		});
 
 		event.context.student = student ?? null;
-
-		// A student auth user with no DB row means registration
-		// was not fully completed. Reject so the frontend can retry.
-		if (!student) {
-			return handleError(
-				event,
-				new UnauthorizedError(
-					'Student profile not found — please complete registration',
-				),
-			);
-		}
-	} else {
-		event.context.student = null;
 	}
 
 	return;
