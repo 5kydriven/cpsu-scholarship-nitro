@@ -11,7 +11,7 @@ export const students = p.pgTable('students', {
 	middleName: p.text('middle_name'),
 	extName: p.text('ext_name'),
 	sex: p.text(),
-	birthdate: p.date(),
+	birthdate: p.text(),
 	contactNumber: p.text('contact_number'),
 	email: p.text(),
 	yearLevel: p.integer('year_level'),

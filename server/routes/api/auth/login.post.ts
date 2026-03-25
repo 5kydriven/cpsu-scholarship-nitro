@@ -45,7 +45,7 @@ export default defineHandler(async (event) => {
 			refreshToken: data.session.refresh_token,
 		});
 	} catch (err) {
-		console.log(err);
+		console.log('here' + err);
 		return handleError(event, err);
 	}
 });

@@ -7,3 +7,4 @@ export {
 	type StudentParent,
 	type NewStudentParent,
 } from './student-parents';
+export * from './relations';

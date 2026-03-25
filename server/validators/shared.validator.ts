@@ -10,4 +10,6 @@ export const searchSchema = paginationSchema.extend({
 	q: z.string().min(1).optional(),
 });
 
+export const paramsSchema = z.object({ id: z.uuid('student not found') });
+
 export type PaginationInput = z.infer<typeof paginationSchema>;

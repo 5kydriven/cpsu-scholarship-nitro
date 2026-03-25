@@ -10,7 +10,7 @@ const envSchema = z.object({
 		.enum(['development', 'production', 'test'])
 		.default('development'),
 
-	APP_URL: z.string().url().default('http://localhost:3000'),
+	APP_URL: z.url().default('http://localhost:3000'),
 
 	// ── Supabase ─────────────────────────────
 	SUPABASE_URL: z.string().url(),

@@ -9,7 +9,7 @@ export const studentsRelations = relations(students, ({ one, many }) => ({
 		fields: [students.id],
 		references: [addresses.studentId],
 	}),
-	parents: many(studentParents), // ← add this
+	parents: many(studentParents),
 }));
 
 export const personnelRelations = relations(personnels, ({ one }) => ({

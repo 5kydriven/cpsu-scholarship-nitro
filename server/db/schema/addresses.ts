@@ -7,12 +7,10 @@ export const addresses = p.pgTable(
 	'addresses',
 	{
 		id: p.uuid().defaultRandom().primaryKey().notNull(),
-		// only one of these will be filled at a time
 		studentId: p.uuid('student_id'),
 		personnelId: p.uuid('personnel_id'),
-		// address fields
 		street: p.text(),
-		barangay: p.text().notNull(),
+		barangay: p.text(),
 		city: p.text(),
 		province: p.text(),
 		zipcode: p.text(),

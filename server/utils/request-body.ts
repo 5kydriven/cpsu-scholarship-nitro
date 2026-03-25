@@ -8,8 +8,6 @@ export async function requestBody(
 		.get('content-type')
 		?.startsWith('multipart/form-data');
 
-	console.log(isContentType);
-
 	if (isContentType) {
 		// Use the Fetch API FormData
 		const form = await event.req.formData();
