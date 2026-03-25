@@ -1,6 +1,7 @@
 import z from 'zod';
 import { createAddressSchema } from './address.validator';
 import { createParentSchema } from './parent.validator';
+import { searchSchema } from './shared.validator';
 
 export const createStudentSchema = z.object({
 	firstName: z.string().min(1, 'First name is required').max(100),
@@ -22,6 +23,11 @@ export const createStudentSchema = z.object({
 			(parents) => new Set(parents.map((p) => p.type)).size === parents.length,
 			'Duplicate parent type',
 		),
+});
+
+export const studentQuerySchema = searchSchema.extend({
+	sortBy: z.enum(['yearLevel']).default('yearLevel'),
+	yearLevel: z.number().min(1).max(6).optional(),
 });
 
 export type CreateStudentSchema = z.infer<typeof createStudentSchema>;

@@ -87,15 +87,6 @@ const params = url.searchParams;
 const header = event.req.headers.get('authorization');
 ```
 
-### Built-in Scheduled Tasks (replaces node-cron)
-
-```ts
-// nitro.config.ts
-scheduledTasks: {
-  '0 0 * * *': 'cleanup:sessions',
-}
-```
-
 ### Route handlers use `defineHandler`
 
 ```ts
@@ -119,32 +110,24 @@ nitro-app/
 │   │   └── api/
 │   │       ├── auth/
 │   │       │   └── me.get.ts
-│   │       ├── users/
+│   │       ├── students/
 │   │       │   ├── index.get.ts
 │   │       │   ├── index.post.ts
 │   │       │   └── [id].get.ts
-│   │       ├── webhooks/
-│   │       │   └── stripe.post.ts
-│   │       └── health.get.ts
+│   │       └── webhooks/
+│   │           └── stripe.post.ts
 │   ├── middleware/
 │   │   ├── 01.logger.ts
 │   │   └── 02.auth.ts
 │   ├── services/               ← Business logic lives here
-│   │   ├── user.service.ts
-│   │   ├── mail.service.ts
+│   │   ├── student.service.ts
 │   │   └── webhook.service.ts
 │   ├── db/
 │   │   ├── index.ts            ← Drizzle client
 │   │   └── schema/
 │   │       ├── index.ts
-│   │       └── profiles.ts
-│   ├── tasks/                  ← Nitro v3 scheduled tasks
-│   │   ├── cleanup-sessions.ts
-│   │   └── process-mail-queue.ts
-│   ├── plugins/
-│   │   └── db.ts               ← DB connection check on startup
 │   ├── lib/
-│   │   └── supabase.ts         ← Supabase client instances
+│   │   └── supabase.ts  ← Supabase client instances
 │   ├── validators/
 │   │   ├── user.validator.ts
 │   │   └── shared.validator.ts ← Pagination, search reusables
@@ -495,26 +478,57 @@ import { UnauthorizedError } from '../utils/errors';
 import { handleError } from '../utils/response';
 import type { AppRole } from '../types/h3';
 
-const PUBLIC_ROUTES: string[] = ['/api/health'];
+const PUBLIC_ROUTES: string[] = ['/api/auth/register', '/api/auth/login'];
 
 export default defineHandler(async (event) => {
 	const url = new URL(event.req.url);
 	const path = url.pathname;
+	const isPublic = PUBLIC_ROUTES.some((route) => path.startsWith(route));
 
-	if (PUBLIC_ROUTES.some((r) => path.startsWith(r))) return;
+	if (isPublic || path === '/') return;
 
-	const authHeader = event.req.headers.get('authorization');
+	const access = getCookie(event, 'sb-access-token');
+	const refresh = getCookie(event, 'sb-refresh-token');
 
-	if (!authHeader?.startsWith('Bearer ')) {
-		return handleError(
-			event,
-			new UnauthorizedError('Missing or malformed Authorization header'),
-		);
+	let supabase = createUserClient(access);
+
+	const { data, error } = await supabase.auth.getUser();
+
+	// 🔥 access token expired → refresh automatically
+	if (error && refresh) {
+		const refreshClient = createUserClient();
+
+		const { data: refreshData, error: refreshError } =
+			await refreshClient.auth.refreshSession({
+				refresh_token: refresh,
+			});
+
+		if (!refreshError) {
+			const newAccess = refreshData.session?.access_token ?? '';
+			const newRefresh = refreshData.session?.refresh_token ?? '';
+
+			setCookie(event, 'sb-access-token', newAccess, {
+				httpOnly: true,
+				secure: process.env.NODE_ENV === 'production',
+				sameSite: 'lax',
+				path: '/',
+			});
+
+			setCookie(event, 'sb-refresh-token', newRefresh, {
+				httpOnly: true,
+				secure: process.env.NODE_ENV === 'production',
+				sameSite: 'lax',
+				path: '/',
+			});
+
+			supabase = createUserClient(newAccess);
+
+			const { data: retryUser } = await supabase.auth.getUser();
+
+			event.context.user = retryUser.user as User;
+			return;
+		}
 	}
-
-	const token = authHeader.slice(7);
-
-	const { data, error } = await supabase.auth.getUser(token);
 
 	if (error || !data.user) {
 		return handleError(
@@ -528,23 +542,37 @@ export default defineHandler(async (event) => {
 	const rawRole = authUser.user_metadata?.role as string | undefined;
 	const role: AppRole = rawRole === 'admin' ? 'admin' : 'student';
 
+	let role: AppRole;
+
+	if (rawRole === 'admin') {
+		role = 'admin';
+	} else if (rawRole === 'staff') {
+		role = 'staff';
+	} else {
+		if (rawRole !== undefined && rawRole !== 'student') {
+			if (isDev) {
+				console.warn(
+					`[auth] Unrecognised role "${rawRole}" for user ${authUser.id} — defaulting to "student"`,
+				);
+			}
+		}
+		role = 'student';
+	}
+
+	// ── Attach auth user + role ───────────────
 	event.context.user = authUser;
 	event.context.role = role;
 
-	const student = await db.query.students.findFirst({
-		where: eq(students.id, authUser.id),
-	});
+	// ── Load student row (students only) ─────
+	if (role === 'student') {
+		const student = await db.query.students.findFirst({
+			where: eq(students.id, authUser.id),
+		});
 
-	event.context.student = student ?? null;
-
-	if (role === 'student' && !student) {
-		return handleError(
-			event,
-			new UnauthorizedError(
-				'Student profile not found — please complete registration',
-			),
-		);
+		event.context.student = student ?? null;
 	}
+
+	return;
 });
 ```
 
@@ -566,15 +594,6 @@ serverDir: './server',
 			middleware: true,
 		},
 	],
-
-	scheduledTasks: {
-
-		'0 0 1 6,11 *': 'scholars:qualify-check',
-
-		'0 * * * *': 'mail:queue',
-
-		'*/30 * * * *': 'health:check',
-	},
 ```
 
 ```ts
@@ -602,7 +621,7 @@ export default defineHandler(async (event) => {
 
 Services own all business logic. They use Drizzle directly — no repository layer.
 
-### `server/services/user.service.ts`
+### `server/services/student.service.ts`
 
 ---
 
