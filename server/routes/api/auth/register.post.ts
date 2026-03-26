@@ -29,11 +29,6 @@ export default defineHandler(async (event) => {
 			throw new BadRequestError(error.message);
 		}
 
-		// const student = await studentService.create({
-		// 	id: data.user.id,
-		// 	email: parsed.data.email,
-		// });
-
 		return successResponse({
 			user: data.user,
 			access_token: data.session?.access_token,

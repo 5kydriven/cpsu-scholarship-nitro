@@ -3,38 +3,22 @@ import { ForbiddenError } from '../utils/errors';
 import { handleError } from '../utils/response';
 import type { AppRole } from '../types/h3';
 
-// ─────────────────────────────────────────────
-// admin-guard.ts
-//
-// Route-scoped middleware — only runs for
-// /api/admin/** requests (configured in nitro.config.ts).
-//
-// 02.auth.ts always runs first and has already:
-//   • Verified the JWT
-//   • Attached event.context.user
-//   • Resolved event.context.role
-//
-// This guard only needs to check the role.
-// Never duplicate auth token logic here.
-// ─────────────────────────────────────────────
+const ALLOWED_ROLES: AppRole[] = ['admin', 'staff'];
 
-// Roles that are allowed to access /api/admin/** routes.
-// Extend this set when adding staff or super-admin roles.
-const ALLOWED_ROLES: AppRole[] = ['admin'];
-
-const PUBLIC_ROUTES: string[] = ['/api/health', '/api/auth/register', '/'];
+const GUARDED_PREFIXES: string[] = ['/api/admin', '/api/personnels'];
 
 export default defineHandler(async (event) => {
-	// const url = new URL(event.req.url);
-	// const path = url.pathname;
+	const path = event.url.pathname;
 
-	// if (PUBLIC_ROUTES.some((r) => path.startsWith(r))) return;
+	const isGuarded = GUARDED_PREFIXES.some((prefix) => path.startsWith(prefix));
 
-	// const role = event.context.role;
+	if (!isGuarded) return;
 
-	// if (!role || !ALLOWED_ROLES.includes(role)) {
-	// 	return handleError(event, new ForbiddenError('Admin access required'));
-	// }
+	const role = event.context.role;
+
+	if (!role || !ALLOWED_ROLES.includes(role)) {
+		return handleError(event, new ForbiddenError('Admin access required'));
+	}
 
 	return;
 });
