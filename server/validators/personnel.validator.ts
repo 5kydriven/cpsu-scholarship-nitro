@@ -3,11 +3,11 @@ import { registerUserSchema } from './auth.validator';
 import { searchSchema } from './shared.validator';
 
 export const createPersonnelSchema = registerUserSchema.safeExtend({
-	role: z.string(),
-	firstName: z.string(),
-	lastName: z.string(),
-	middleName: z.string().optional(),
-	extName: z.string().optional(),
+	role: z.string().trim().toLowerCase(),
+	firstName: z.string().trim().toLowerCase(),
+	lastName: z.string().trim().toLowerCase(),
+	middleName: z.string().trim().toLowerCase().optional(),
+	extName: z.string().trim().toLowerCase().optional(),
 	sex: z.enum(['male', 'female']),
 	birthdate: z.string().optional(),
 	contactNumber: z
@@ -15,8 +15,8 @@ export const createPersonnelSchema = registerUserSchema.safeExtend({
 		.regex(/^09\d{9}$/, 'Invalid PH mobile number')
 		.transform((v) => v.replace(/^0/, '+63'))
 		.optional(),
-	position: z.string().optional(),
-	department: z.string().optional(),
+	position: z.string().trim().toLowerCase().optional(),
+	department: z.string().trim().toLowerCase().optional(),
 });
 
 export const personnelQuerySchema = searchSchema.safeExtend({
