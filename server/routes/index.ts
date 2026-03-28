@@ -1,4 +1,8 @@
-<!DOCTYPE html>
+import { defineHandler } from 'nitro';
+
+export default defineHandler((event) => {
+	return new Response(
+		`<!DOCTYPE html>
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
@@ -43,3 +47,7 @@
 		</main>
 	</body>
 </html>
+`,
+		{ headers: { 'Content-Type': 'text/html' } },
+	);
+});

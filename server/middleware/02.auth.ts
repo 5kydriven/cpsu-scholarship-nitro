@@ -6,7 +6,7 @@ import { UnauthorizedError } from '../utils/errors';
 import { handleError } from '../utils/response';
 import { isDev } from '../utils/env';
 import type { AppRole } from '../types/h3';
-import { getCookie, setCookie } from 'h3';
+import { getCookie, HTTPError, setCookie } from 'h3';
 import type { User } from '@supabase/supabase-js';
 
 const PUBLIC_ROUTES: string[] = ['/api/auth/register', '/api/auth/login'];
@@ -16,7 +16,10 @@ export default defineHandler(async (event) => {
 	const path = url.pathname;
 	const isPublic = PUBLIC_ROUTES.some((route) => path.startsWith(route));
 
-	if (isPublic || path === '/') return;
+	if (path !== '/' && !path.startsWith('/api'))
+		throw new HTTPError('not found');
+
+	if (isPublic || !path.startsWith('/api')) return;
 
 	const access = getCookie(event, 'sb-access-token');
 	const refresh = getCookie(event, 'sb-refresh-token');
@@ -62,6 +65,7 @@ export default defineHandler(async (event) => {
 	}
 
 	if (error || !data.user) {
+		console.log(`here ${error}`);
 		return handleError(
 			event,
 			new UnauthorizedError('Invalid or expired token'),

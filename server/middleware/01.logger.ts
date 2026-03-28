@@ -23,6 +23,17 @@ export default defineHandler((event) => {
 		isDev && parsedUrl.search ? `${path}${parsedUrl.search}` : path;
 
 	event.runtime?.node?.res?.on('finish', () => {
+		event.res.headers.set(
+			'Access-Control-Allow-Origin',
+			'http://localhost:3000',
+		);
+		event.res.headers.set('Access-Control-Allow-Methods', '*');
+		event.res.headers.set(
+			'Access-Control-Allow-Headers',
+			'Content-Type, Authorization',
+		);
+		event.res.headers.set('Access-Control-Allow-Credentials', 'true');
+
 		const status = event.runtime?.node?.res?.statusCode ?? 0;
 		const ms = Date.now() - start;
 
@@ -30,6 +41,7 @@ export default defineHandler((event) => {
 		const label = statusLabel(status);
 
 		console.log(`${label} [${method}] ${display} → ${status} (${ms}ms)`);
+		console.log(`Headers: ${JSON.stringify(event.res.headers.entries())}`);
 	});
 });
 
