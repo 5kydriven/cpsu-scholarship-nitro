@@ -7,7 +7,11 @@ export default defineHandler(async (event) => {
 		if (!event.context.user) {
 			throw new InternalError();
 		}
-		return successResponse(event.context.user);
+		return successResponse({
+			id: event.context.user.id,
+			email: event.context.user.email,
+			role: event.context.role,
+		});
 	} catch (err) {
 		return handleError(event, err);
 	}
