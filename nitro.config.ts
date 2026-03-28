@@ -3,7 +3,7 @@ import { defineConfig } from 'nitro';
 export default defineConfig({
 	serverDir: './server',
 	routeRules: {
-		'/': {
+		'/**': {
 			cors: true,
 			headers: {
 				'Access-Control-Allow-Origin': 'http://localhost:3000',
