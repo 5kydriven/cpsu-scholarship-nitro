@@ -23,7 +23,7 @@ export default defineHandler(async (event) => {
 		setCookie(event, 'sb-access-token', access, {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'lax',
+			sameSite: 'none',
 			path: '/',
 			maxAge: 60 * 60,
 		});
@@ -31,7 +31,7 @@ export default defineHandler(async (event) => {
 		setCookie(event, 'sb-refresh-token', refresh, {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'lax',
+			sameSite: 'none',
 			path: '/',
 			maxAge: 60 * 60 * 24 * 30,
 		});
