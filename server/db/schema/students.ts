@@ -1,5 +1,6 @@
 import * as p from 'drizzle-orm/pg-core';
 import { authUsers } from './auth';
+import { courses } from './courses';
 
 export const students = p.pgTable('students', {
 	id: p
@@ -14,6 +15,7 @@ export const students = p.pgTable('students', {
 	birthdate: p.text(),
 	contactNumber: p.text('contact_number'),
 	email: p.text(),
+	courseId: p.uuid('course_id').references(() => courses.id),
 	yearLevel: p.integer('year_level'),
 	isActive: p.boolean('is_active').default(true),
 	createdAt: p.timestamp('created_at', { mode: 'string' }).defaultNow(),

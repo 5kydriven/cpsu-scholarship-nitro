@@ -4,10 +4,20 @@ import { createParentSchema } from './parent.validator';
 import { searchSchema } from './shared.validator';
 
 export const createStudentSchema = z.object({
-	firstName: z.string().min(1, 'First name is required').max(100),
-	lastName: z.string().min(1, 'Last name is required').max(100),
-	middleName: z.string().max(100).optional(),
-	extName: z.string().max(20).optional(),
+	firstName: z
+		.string()
+		.trim()
+		.toLowerCase()
+		.min(1, 'First name is required')
+		.max(100),
+	lastName: z
+		.string()
+		.trim()
+		.toLowerCase()
+		.min(1, 'Last name is required')
+		.max(100),
+	middleName: z.string().trim().toLowerCase().max(100).optional(),
+	extName: z.string().trim().toLowerCase().max(20).optional(),
 	birthdate: z.string().min(1, 'Birthdate is required').max(100),
 	contactNumber: z
 		.string()

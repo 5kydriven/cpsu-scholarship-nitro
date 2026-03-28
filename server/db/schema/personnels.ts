@@ -6,11 +6,11 @@ export const personnels = p.pgTable('personnels', {
 		.uuid('user_id')
 		.primaryKey()
 		.references(() => authUsers.id, { onDelete: 'cascade' }),
-
 	firstName: p.text('first_name').notNull(),
 	lastName: p.text('last_name').notNull(),
 	middleName: p.text('middle_name'),
 	extName: p.text('ext_name'),
+	email: p.text(),
 	sex: p.text(),
 	birthdate: p.date(),
 	contactNumber: p.text('contact_number'),

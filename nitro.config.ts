@@ -20,17 +20,6 @@ export default defineConfig({
 		},
 	},
 
-	// ── Admin-only middleware ─────────────────
-	// admin-guard.ts runs AFTER 02.auth.ts (global middleware runs first).
-	// It is scoped only to /api/admin/** — no overhead on student routes.
-	handlers: [
-		// {
-		// 	route: '/api/admin/**',
-		// 	handler: './server/middleware/admin-guard.ts',
-		// 	middleware: true,
-		// },
-	],
-
 	devServer: {
 		port: 3000,
 	},

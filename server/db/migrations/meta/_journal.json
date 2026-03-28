@@ -22,6 +22,27 @@
       "when": 1774360245048,
       "tag": "0002_thick_the_captain",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1774529653521,
+      "tag": "0003_light_toxin",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774536018002,
+      "tag": "0004_zippy_risque",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1774538322979,
+      "tag": "0005_big_morgan_stark",
+      "breakpoints": true
     }
   ]
 }
