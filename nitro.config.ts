@@ -14,8 +14,18 @@ export default defineConfig({
 			},
 		},
 	},
-
 	devServer: {
 		port: 3001,
+	},
+	experimental: {
+		openAPI: true,
+	},
+	openAPI: {
+		meta: {
+			title: 'CPSU-Scholarship-API',
+			description: 'CPSU Scholarship API',
+			version: '1.0',
+		},
+		production: 'runtime',
 	},
 });
