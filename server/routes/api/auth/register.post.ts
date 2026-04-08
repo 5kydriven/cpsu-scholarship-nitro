@@ -15,13 +15,13 @@ export default defineHandler(async (event) => {
 			throw new ValidationError(z.treeifyError(parsed.error));
 		}
 
-		const { data, error } = await supabaseAdmin.auth.signUp({
+		const { data, error } = await supabaseAdmin.auth.admin.createUser({
 			email: parsed.data.email,
 			password: parsed.data.password,
-			options: {
-				data: {
-					role: 'student',
-				},
+			email_confirm: true,
+			role: 'student',
+			user_metadata: {
+				role: 'student',
 			},
 		});
 
@@ -31,7 +31,6 @@ export default defineHandler(async (event) => {
 
 		return successResponse({
 			user: data.user,
-			access_token: data.session?.access_token,
 		});
 	} catch (err) {
 		return handleError(event, err);
