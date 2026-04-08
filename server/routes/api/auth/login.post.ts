@@ -3,6 +3,7 @@ import { requestBody } from '#server/utils/request-body.ts';
 import { handleError, successResponse } from '#server/utils/response.ts';
 import { defineHandler } from 'nitro';
 import { setCookie } from 'h3';
+import { BadRequestError } from '#server/utils/errors.ts';
 
 export default defineHandler(async (event) => {
 	try {
@@ -14,7 +15,7 @@ export default defineHandler(async (event) => {
 		});
 
 		if (error) {
-			throw new Error(error.message);
+			throw new BadRequestError(error.message);
 		}
 
 		const access = data.session.access_token;
