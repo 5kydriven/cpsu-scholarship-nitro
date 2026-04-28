@@ -1,4 +1,4 @@
-import { courseService } from '#server/service/course.service.ts';
+import { courseService } from '#server/services/course.service.ts';
 import { ValidationError } from '#server/utils/errors.ts';
 import { requestBody } from '#server/utils/request-body.ts';
 import { handleError, successResponse } from '#server/utils/response.ts';

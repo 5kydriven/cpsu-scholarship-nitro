@@ -1,4 +1,4 @@
-import { courseService } from '#server/service/course.service.ts';
+import { courseService } from '#server/services/course.service.ts';
 import { successResponse, handleError } from '#server/utils/response.ts';
 import { defineHandler } from 'nitro';
 

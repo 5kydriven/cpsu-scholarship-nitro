@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '#server/lib/supabase.ts';
-import { personnelService } from '#server/service/personnel.service.ts';
+import { personnelService } from '#server/services/personnel.service.ts';
 import { BadRequestError, ValidationError } from '#server/utils/errors.ts';
 import { requestBody } from '#server/utils/request-body.ts';
 import { handleError, successResponse } from '#server/utils/response.ts';

@@ -4,7 +4,9 @@
 	"scripts": {
 		"build": "nitro build",
 		"dev": "nitro dev",
-		"preview": "nitro preview"
+		"preview": "nitro preview",
+		"test": "bun test",
+		"test:courses": "bun test tests/api/courses"
 	},
 	"imports": {
 		"#*": "./*"

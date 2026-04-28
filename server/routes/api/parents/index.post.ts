@@ -1,4 +1,4 @@
-import { studentParentService } from '#server/service/student-parent.service.ts';
+import { studentParentService } from '#server/services/student-parent.service.ts';
 import { ValidationError } from '#server/utils/errors.ts';
 import { requestBody } from '#server/utils/request-body.ts';
 import { handleError, successResponse } from '#server/utils/response.ts';
