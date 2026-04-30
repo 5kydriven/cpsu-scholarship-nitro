@@ -1,61 +1,68 @@
-import { addressService } from '#server/services/address.service.ts';
-import { studentParentService } from '#server/services/student-parent.service.ts';
-import { studentService } from '#server/services/student.service.ts';
-import { ValidationError } from '#server/utils/errors.ts';
+import {
+	applicationService,
+	type MultipartDocumentFile,
+} from '#server/services/application.service.ts';
+import { BadRequestError, ValidationError } from '#server/utils/errors.ts';
 import { requestBody } from '#server/utils/request-body.ts';
 import { handleError, successResponse } from '#server/utils/response.ts';
-import { createStudentSchema } from '#server/validators/student.validation.ts';
+import { createStudentApplicationSchema } from '#server/validators/student.validation.ts';
 import { defineHandler } from 'nitro';
 import z from 'zod';
+
+function parsePayload(body: Record<string, unknown>): unknown {
+	if (typeof body.payload !== 'string') {
+		throw new BadRequestError('Multipart payload field is required');
+	}
+
+	try {
+		return JSON.parse(body.payload);
+	} catch {
+		throw new BadRequestError('Payload must be valid JSON');
+	}
+}
+
+function isMultipartDocumentFile(value: unknown): value is MultipartDocumentFile {
+	if (!value || typeof value !== 'object') return false;
+
+	const candidate = value as Partial<MultipartDocumentFile>;
+	return (
+		typeof candidate.filename === 'string' &&
+		typeof candidate.type === 'string' &&
+		typeof candidate.size === 'number' &&
+		candidate.file instanceof File
+	);
+}
+
+function collectFiles(body: Record<string, unknown>) {
+	const files: Record<string, MultipartDocumentFile> = {};
+
+	for (const [field, value] of Object.entries(body)) {
+		if (field === 'payload') continue;
+		if (isMultipartDocumentFile(value)) files[field] = value;
+	}
+
+	return files;
+}
 
 export default defineHandler(async (event) => {
 	try {
 		const user = event.context.user;
 		const body = await requestBody(event);
-		const { data, error, success } = createStudentSchema.safeParse(body);
+		const payload = parsePayload(body);
+		const { data, error, success } =
+			createStudentApplicationSchema.safeParse(payload);
 
 		if (!success) {
 			throw new ValidationError(z.treeifyError(error));
 		}
 
-		const [student] = await studentService.create({
-			id: user.id,
-			birthdate: data.birthdate,
-			contactNumber: data.contactNumber,
-			email: user.email,
-			extName: data.extName,
-			firstName: data.firstName,
-			lastName: data.lastName,
-			middleName: data.middleName,
-			sex: data.sex,
-			yearLevel: data.yearLevel,
+		const result = await applicationService.createWithStudentProfile({
+			user,
+			input: data,
+			files: collectFiles(body),
 		});
 
-		const address = await addressService.create({
-			studentId: student?.id,
-			street: data.address.street,
-			barangay: data.address.barangay,
-			city: data.address.city,
-			province: data.address.province,
-			zipcode: data.address.zipcode,
-		});
-
-		const paresedParents = data.parents.map((parent) => ({
-			type: parent.type,
-			firstName: parent.firstName,
-			lastName: parent.lastName,
-			middleName: parent.middleName,
-			contactNumber: parent.contactNumber,
-			studentId: student?.id ?? '',
-		}));
-
-		const parents = await studentParentService.createMany(paresedParents);
-
-		return successResponse({
-			student,
-			address,
-			parents,
-		});
+		return successResponse(result);
 	} catch (err) {
 		return handleError(event, err);
 	}

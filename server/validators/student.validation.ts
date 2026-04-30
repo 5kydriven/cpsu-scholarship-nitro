@@ -32,7 +32,25 @@ export const createStudentSchema = z.object({
 		.refine(
 			(parents) => new Set(parents.map((p) => p.type)).size === parents.length,
 			'Duplicate parent type',
-		),
+	),
+});
+
+export const applicationDocumentSchema = z.object({
+	field: z.string().trim().min(1).max(100),
+	type: z
+		.string()
+		.trim()
+		.min(1)
+		.max(100)
+		.regex(/^[a-z0-9_]+$/, 'Document type must be snake_case'),
+});
+
+export const createStudentApplicationSchema = createStudentSchema.extend({
+	offeringId: z.uuid('Invalid scholarship offering id'),
+	extraAnswers: z.record(z.string(), z.unknown()).default({}),
+	documents: z
+		.array(applicationDocumentSchema)
+		.min(1, 'At least one document is required'),
 });
 
 export const studentQuerySchema = searchSchema.extend({
@@ -41,3 +59,7 @@ export const studentQuerySchema = searchSchema.extend({
 });
 
 export type CreateStudentSchema = z.infer<typeof createStudentSchema>;
+export type CreateStudentApplicationSchema = z.infer<
+	typeof createStudentApplicationSchema
+>;
+export type ApplicationDocumentInput = z.infer<typeof applicationDocumentSchema>;
