@@ -5,3 +5,5 @@
 - [ ] add import csv for scholarship
 - [ ] add ranking for scholarship
 - [ ] integrate AI for selecting the scholarship
+- [ ] change email into student ID in auth
+- [ ] add a seeder for student ID
