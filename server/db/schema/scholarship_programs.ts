@@ -1,10 +1,14 @@
 import * as p from 'drizzle-orm/pg-core';
+import { scholarshipIntakeTypeEnum } from './scholarship_enums';
 
 export const scholarshipPrograms = p.pgTable('scholarship_programs', {
 	id: p.uuid().defaultRandom().primaryKey().notNull(),
 	code: p.text(),
 	name: p.text().notNull(),
 	description: p.text(),
+	intakeType: scholarshipIntakeTypeEnum('intake_type')
+		.default('public_application')
+		.notNull(),
 	defaultAmountPerSemester: p
 		.numeric('default_amount_per_semester', { precision: 12, scale: 2 })
 		.notNull(),

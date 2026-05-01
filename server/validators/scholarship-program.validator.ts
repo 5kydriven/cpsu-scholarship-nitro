@@ -10,6 +10,9 @@ const scholarshipProgramFields = z.object({
 	code: z.string().optional(),
 	name: z.string().trim().min(1).max(200),
 	description: z.string().trim().max(1000).nullable().optional(),
+	intakeType: z
+		.enum(['public_application', 'staff_nomination'])
+		.default('public_application'),
 	defaultAmountPerSemester: amountSchema,
 	isActive: z.boolean().optional(),
 });

@@ -11,6 +11,7 @@ import { payouts } from './payouts';
 import { scholars } from './scholars';
 import { scholarshipOfferings } from './scholarship_offerings';
 import { scholarshipPrograms } from './scholarship_programs';
+import { scholarshipNominations } from './scholarship_nominations';
 
 export const studentsRelations = relations(students, ({ one, many }) => ({
 	address: one(addresses, {
@@ -24,6 +25,7 @@ export const studentsRelations = relations(students, ({ one, many }) => ({
 	}),
 	applications: many(applications),
 	scholars: many(scholars),
+	nominations: many(scholarshipNominations),
 }));
 
 export const personnelRelations = relations(personnels, ({ one, many }) => ({
@@ -38,6 +40,7 @@ export const personnelRelations = relations(personnels, ({ one, many }) => ({
 		relationName: 'applicationApprover',
 	}),
 	processedPayouts: many(payouts),
+	createdNominations: many(scholarshipNominations),
 	statusChanges: many(applicationStatusHistory),
 }));
 
@@ -79,6 +82,7 @@ export const scholarshipOfferingsRelations = relations(
 		}),
 		applications: many(applications),
 		scholars: many(scholars),
+		nominations: many(scholarshipNominations),
 	}),
 );
 
@@ -108,6 +112,32 @@ export const applicationsRelations = relations(
 		scholar: one(scholars, {
 			fields: [applications.id],
 			references: [scholars.applicationId],
+		}),
+		nomination: one(scholarshipNominations, {
+			fields: [applications.id],
+			references: [scholarshipNominations.applicationId],
+		}),
+	}),
+);
+
+export const scholarshipNominationsRelations = relations(
+	scholarshipNominations,
+	({ one }) => ({
+		student: one(students, {
+			fields: [scholarshipNominations.studentId],
+			references: [students.id],
+		}),
+		offering: one(scholarshipOfferings, {
+			fields: [scholarshipNominations.offeringId],
+			references: [scholarshipOfferings.id],
+		}),
+		nominator: one(personnels, {
+			fields: [scholarshipNominations.nominatedBy],
+			references: [personnels.id],
+		}),
+		application: one(applications, {
+			fields: [scholarshipNominations.applicationId],
+			references: [applications.id],
 		}),
 	}),
 );

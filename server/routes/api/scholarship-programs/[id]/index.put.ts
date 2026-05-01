@@ -1,5 +1,9 @@
 import { scholarshipProgramService } from '#server/services/scholarship-program.service.ts';
-import { BadRequestError, ValidationError } from '#server/utils/errors.ts';
+import {
+	BadRequestError,
+	ForbiddenError,
+	ValidationError,
+} from '#server/utils/errors.ts';
 import { requestBody } from '#server/utils/request-body.ts';
 import { handleError, successResponse } from '#server/utils/response.ts';
 import { updateScholarshipProgramSchema } from '#server/validators/scholarship-program.validator.ts';
@@ -8,6 +12,10 @@ import z from 'zod';
 
 export default defineHandler(async (event) => {
 	try {
+		if (event.context.role !== 'staff' && event.context.role !== 'admin') {
+			throw new ForbiddenError('Staff or admin access required');
+		}
+
 		const id = event.context.params?.id;
 		const body = await requestBody(event);
 

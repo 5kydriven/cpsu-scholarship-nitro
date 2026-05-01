@@ -24,7 +24,9 @@ const scholarshipOfferingFields = z.object({
 	availableSlots: z.coerce
 		.number()
 		.int()
-		.positive('availableSlots must be greater than 0'),
+		.positive('availableSlots must be greater than 0')
+		.nullable()
+		.optional(),
 	applicationStartAt: dateSchema.nullable().optional(),
 	applicationEndAt: dateSchema.nullable().optional(),
 	status: z.enum(['draft', 'open', 'closed', 'archived']).default('draft'),

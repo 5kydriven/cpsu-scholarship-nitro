@@ -16,10 +16,11 @@ export const payouts = p.pgTable(
 		amount: p.numeric({ precision: 12, scale: 2 }).notNull(),
 		status: payoutStatusEnum().default('pending').notNull(),
 		releasedAt: p.timestamp('released_at', { mode: 'string' }),
+		receivedAt: p.timestamp('received_at', { mode: 'string' }),
 		processedBy: p.uuid('processed_by').references(() => personnels.id, {
 			onDelete: 'set null',
 		}),
-		referenceNo: p.text('reference_no'),
+		checkNumber: p.text('check_number'),
 		remarks: p.text(),
 		createdAt: p.timestamp('created_at', { mode: 'string' }).defaultNow(),
 		updatedAt: p.timestamp('updated_at', { mode: 'string' }).defaultNow(),

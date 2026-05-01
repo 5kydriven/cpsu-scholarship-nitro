@@ -18,7 +18,7 @@ export const scholarshipOfferings = p.pgTable(
 		allocatedBudget: p
 			.numeric('allocated_budget', { precision: 14, scale: 2 })
 			.notNull(),
-		availableSlots: p.integer('available_slots').notNull(),
+		availableSlots: p.integer('available_slots'),
 		applicationStartAt: p.timestamp('application_start_at', {
 			mode: 'string',
 		}),

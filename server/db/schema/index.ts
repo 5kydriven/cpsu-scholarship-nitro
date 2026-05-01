@@ -29,6 +29,11 @@ export { documents, type Document, type NewDocument } from './documents';
 export { scholars, type Scholar, type NewScholar } from './scholars';
 export { payouts, type Payout, type NewPayout } from './payouts';
 export {
+	scholarshipNominations,
+	type ScholarshipNomination,
+	type NewScholarshipNomination,
+} from './scholarship_nominations';
+export {
 	applicationStatusHistory,
 	type ApplicationStatusHistory,
 	type NewApplicationStatusHistory,

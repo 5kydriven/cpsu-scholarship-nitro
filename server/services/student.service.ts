@@ -1,11 +1,20 @@
 import { and, asc, count, desc, eq, ilike, or, SQL } from 'drizzle-orm';
-import { db, students, type NewStudent } from '../db';
+import {
+	addresses,
+	db,
+	studentParents,
+	students,
+	type NewAddress,
+	type NewStudent,
+	type NewStudentParent,
+} from '../db';
 import { ConflictError, NotFoundError } from '#server/utils/errors.ts';
 import {
 	paramsSchema,
 	type PaginationInput,
 } from '#server/validators/shared.validator.ts';
 import { buildMeta, toOffset } from '#server/utils/pagination.ts';
+import type { CreateStudentSchema } from '#server/validators/student.validation.ts';
 
 export const studentService = {
 	async create(student: NewStudent) {
@@ -24,6 +33,78 @@ export const studentService = {
 			.values(student)
 			.returning();
 		return newStudent;
+	},
+
+	async upsertProfile(userId: string, email: string | undefined, input: CreateStudentSchema) {
+		return await db.transaction(async (tx) => {
+			const studentValues = {
+				id: userId,
+				firstName: input.firstName,
+				lastName: input.lastName,
+				middleName: input.middleName,
+				extName: input.extName,
+				birthdate: input.birthdate,
+				contactNumber: input.contactNumber,
+				email,
+				sex: input.sex,
+				yearLevel: input.yearLevel,
+			} satisfies NewStudent;
+
+			const existingStudent = await tx.query.students.findFirst({
+				where: eq(students.id, userId),
+			});
+
+			const [student] = existingStudent
+				? await tx
+						.update(students)
+						.set(studentValues)
+						.where(eq(students.id, userId))
+						.returning()
+				: await tx.insert(students).values(studentValues).returning();
+
+			const addressValues = {
+				studentId: userId,
+				street: input.address.street,
+				barangay: input.address.barangay,
+				city: input.address.city,
+				province: input.address.province,
+				zipcode: input.address.zipcode,
+			} satisfies NewAddress;
+
+			const existingAddress = await tx.query.addresses.findFirst({
+				where: eq(addresses.studentId, userId),
+			});
+
+			const [address] = existingAddress
+				? await tx
+						.update(addresses)
+						.set(addressValues)
+						.where(eq(addresses.studentId, userId))
+						.returning()
+				: await tx.insert(addresses).values(addressValues).returning();
+
+			await tx.delete(studentParents).where(eq(studentParents.studentId, userId));
+
+			const parentRows = input.parents.map(
+				(parent) =>
+					({
+						studentId: userId,
+						type: parent.type,
+						firstName: parent.firstName,
+						lastName: parent.lastName,
+						middleName: parent.middleName,
+						contactNumber: parent.contactNumber,
+					}) satisfies NewStudentParent,
+			);
+
+			const parents = await tx.insert(studentParents).values(parentRows).returning();
+
+			return {
+				student,
+				address,
+				parents,
+			};
+		});
 	},
 
 	async getById(id: string) {
