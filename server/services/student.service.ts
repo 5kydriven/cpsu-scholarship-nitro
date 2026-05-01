@@ -35,18 +35,25 @@ export const studentService = {
 		return newStudent;
 	},
 
-	async upsertProfile(userId: string, email: string | undefined, input: CreateStudentSchema) {
+	async upsertProfile(
+		userId: string,
+		email: string | undefined,
+		input: CreateStudentSchema,
+	) {
 		return await db.transaction(async (tx) => {
 			const studentValues = {
 				id: userId,
+				studentId: input.studentId,
 				firstName: input.firstName,
 				lastName: input.lastName,
 				middleName: input.middleName,
 				extName: input.extName,
 				birthdate: input.birthdate,
+				birthplace: input.birthplace,
 				contactNumber: input.contactNumber,
-				email,
+				email: input.email ?? email,
 				sex: input.sex,
+				courseId: input.courseId,
 				yearLevel: input.yearLevel,
 			} satisfies NewStudent;
 
@@ -93,7 +100,12 @@ export const studentService = {
 						firstName: parent.firstName,
 						lastName: parent.lastName,
 						middleName: parent.middleName,
+						extName: parent.extName,
+						occupation: parent.occupation,
+						monthlyIncome: parent.monthlyIncome,
+						status: parent.status,
 						contactNumber: parent.contactNumber,
+						email: parent.email,
 					}) satisfies NewStudentParent,
 			);
 

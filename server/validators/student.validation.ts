@@ -4,6 +4,7 @@ import { createParentSchema } from './parent.validator';
 import { searchSchema } from './shared.validator';
 
 export const createStudentSchema = z.object({
+	studentId: z.string().trim().min(1, 'Student ID is required').max(100),
 	firstName: z
 		.string()
 		.trim()
@@ -19,11 +20,19 @@ export const createStudentSchema = z.object({
 	middleName: z.string().trim().toLowerCase().max(100).optional(),
 	extName: z.string().trim().toLowerCase().max(20).optional(),
 	birthdate: z.string().min(1, 'Birthdate is required').max(100),
+	birthplace: z
+		.string()
+		.trim()
+		.toLowerCase()
+		.min(1, 'Birthplace is required')
+		.max(200),
 	contactNumber: z
 		.string()
-		.regex(/^09\d{9}$/, 'Invalid PH mobile number')
+		.regex(/^(09\d{9}|\+639\d{9})$/, 'Invalid PH mobile number')
 		.transform((v) => v.replace(/^0/, '+63')),
+	email: z.string().email().max(200).optional(),
 	sex: z.enum(['male', 'female']),
+	courseId: z.uuid('Invalid course id').optional(),
 	yearLevel: z.coerce.number().int().min(1).max(6),
 	address: createAddressSchema,
 	parents: z

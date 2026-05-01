@@ -5,7 +5,11 @@ import {
 	scholarshipPrograms,
 	type NewScholarshipOffering,
 } from '../db';
-import { BadRequestError, ConflictError, NotFoundError } from '#server/utils/errors.ts';
+import {
+	BadRequestError,
+	ConflictError,
+	NotFoundError,
+} from '#server/utils/errors.ts';
 import { paramsSchema } from '#server/validators/shared.validator.ts';
 import type { UpdateScholarshipOfferingSchema } from '#server/validators/scholarship-offering.validator.ts';
 
@@ -29,7 +33,9 @@ async function assertCanOpenOffering(programId: string) {
 	const program = await getProgram(programId);
 
 	if (!program.isActive) {
-		throw new BadRequestError('Cannot open an offering for an inactive program');
+		throw new BadRequestError(
+			'Cannot open an offering for an inactive program',
+		);
 	}
 }
 
@@ -73,7 +79,7 @@ export const scholarshipOfferingService = {
 			.values(offering)
 			.returning();
 
-		return await this.getById(result.id);
+		return await this.getById(result?.id ?? '');
 	},
 
 	async listOpen() {

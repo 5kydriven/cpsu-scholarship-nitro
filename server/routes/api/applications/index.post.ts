@@ -5,6 +5,7 @@ import {
 import { BadRequestError, UnauthorizedError, ValidationError } from '#server/utils/errors.ts';
 import { requestBody } from '#server/utils/request-body.ts';
 import { handleError, successResponse } from '#server/utils/response.ts';
+import { normalizeScholarshipApplicationPayload } from '#server/utils/scholarship-form-normalizer.ts';
 import { submitApplicationSchema } from '#server/validators/application.validator.ts';
 import { defineHandler } from 'nitro';
 import z from 'zod';
@@ -50,7 +51,9 @@ export default defineHandler(async (event) => {
 
 		const body = await requestBody(event);
 		const payload = parsePayload(body);
-		const { data, error, success } = submitApplicationSchema.safeParse(payload);
+		const normalizedPayload = normalizeScholarshipApplicationPayload(payload);
+		const { data, error, success } =
+			submitApplicationSchema.safeParse(normalizedPayload);
 
 		if (!success) {
 			throw new ValidationError(z.treeifyError(error));
@@ -58,6 +61,7 @@ export default defineHandler(async (event) => {
 
 		const result = await applicationService.submit({
 			studentId: event.context.user.id,
+			userEmail: event.context.user.email,
 			input: data,
 			files: collectFiles(body),
 		});

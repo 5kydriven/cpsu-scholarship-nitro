@@ -16,6 +16,7 @@ export const studentParents = p.pgTable(
 		occupation: p.text(),
 		// store as numeric string to avoid float precision issues
 		monthlyIncome: p.text('monthly_income'),
+		status: p.text().default('unknown').notNull(),
 		contactNumber: p.text('contact_number'),
 		email: p.text(),
 		createdAt: p.timestamp('created_at', { mode: 'string' }).defaultNow(),
@@ -32,6 +33,10 @@ export const studentParents = p.pgTable(
 		p.check(
 			'student_parents_type_check',
 			sql`type = ANY (ARRAY['father'::text, 'mother'::text, 'guardian'::text])`,
+		),
+		p.check(
+			'student_parents_status_check',
+			sql`status = ANY (ARRAY['living'::text, 'deceased'::text, 'unknown'::text])`,
 		),
 		// enforce max one row per type per student
 		// e.g. can't have two mothers

@@ -18,6 +18,7 @@ import {
 	type NewStudentParent,
 } from '../db';
 import { deleteDocument, uploadDocument } from '#server/lib/supabase.ts';
+import { studentService } from '#server/services/student.service.ts';
 import {
 	BadRequestError,
 	ConflictError,
@@ -56,6 +57,7 @@ interface CreateStudentApplicationArgs {
 
 interface SubmitApplicationArgs {
 	studentId: string;
+	userEmail?: string;
 	input: SubmitApplicationInput;
 	files: Record<string, MultipartDocumentFile>;
 }
@@ -216,14 +218,17 @@ export const applicationService = {
 					.insert(students)
 					.values({
 						id: user.id,
+						studentId: input.studentId,
 						birthdate: input.birthdate,
+						birthplace: input.birthplace,
 						contactNumber: input.contactNumber,
-						email: user.email,
+						email: input.email ?? user.email,
 						extName: input.extName,
 						firstName: input.firstName,
 						lastName: input.lastName,
 						middleName: input.middleName,
 						sex: input.sex,
+						courseId: input.courseId,
 						yearLevel: input.yearLevel,
 					} satisfies NewStudent)
 					.returning();
@@ -247,7 +252,12 @@ export const applicationService = {
 							firstName: parent.firstName,
 							lastName: parent.lastName,
 							middleName: parent.middleName,
+							extName: parent.extName,
+							occupation: parent.occupation,
+							monthlyIncome: parent.monthlyIncome,
+							status: parent.status,
 							contactNumber: parent.contactNumber,
+							email: parent.email,
 							studentId: user.id,
 						}) satisfies NewStudentParent,
 				);
@@ -317,7 +327,11 @@ export const applicationService = {
 		});
 	},
 
-	async submit({ studentId, input, files }: SubmitApplicationArgs) {
+	async submit({ studentId, userEmail, input, files }: SubmitApplicationArgs) {
+		if (input.profile) {
+			await studentService.upsertProfile(studentId, userEmail, input.profile);
+		}
+
 		const student = await db.query.students.findFirst({
 			where: eq(students.id, studentId),
 			with: {

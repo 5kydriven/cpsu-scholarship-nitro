@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { searchSchema } from './shared.validator';
-import { applicationDocumentSchema } from './student.validation';
+import { applicationDocumentSchema, createStudentSchema } from './student.validation';
 
 export const submitApplicationSchema = z.object({
 	offeringId: z.uuid('Invalid scholarship offering id'),
+	profile: createStudentSchema.optional(),
 	extraAnswers: z.record(z.string(), z.unknown()).default({}),
 	documents: z.array(applicationDocumentSchema).default([]),
 });
