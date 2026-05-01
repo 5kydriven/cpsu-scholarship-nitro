@@ -2,7 +2,7 @@ import * as p from 'drizzle-orm/pg-core';
 
 export const scholarshipPrograms = p.pgTable('scholarship_programs', {
 	id: p.uuid().defaultRandom().primaryKey().notNull(),
-	code: p.text().notNull().unique(),
+	code: p.text(),
 	name: p.text().notNull(),
 	description: p.text(),
 	defaultAmountPerSemester: p

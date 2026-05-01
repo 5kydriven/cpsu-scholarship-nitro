@@ -9,7 +9,11 @@ import type { AppRole } from '../types/h3';
 import { getCookie, HTTPError, setCookie } from 'h3';
 import type { User } from '@supabase/supabase-js';
 
-const PUBLIC_ROUTES: string[] = ['/api/auth/register', '/api/auth/login'];
+const PUBLIC_ROUTES: string[] = [
+	'/api/auth/register',
+	'/api/auth/login',
+	// '/api/personnels', for dev purpose
+];
 
 export default defineHandler(async (event) => {
 	const url = new URL(event.req.url);
