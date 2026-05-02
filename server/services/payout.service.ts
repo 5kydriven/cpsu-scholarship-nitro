@@ -4,6 +4,7 @@ import {
 	payouts,
 	scholars,
 	scholarshipOfferings,
+	students,
 	type NewPayout,
 } from '../db';
 import {
@@ -164,7 +165,15 @@ export const payoutService = {
 			const scholarConditions: SQL[] = [];
 			if (offeringId)
 				scholarConditions.push(eq(scholars.offeringId, offeringId));
-			if (studentId) scholarConditions.push(eq(scholars.studentId, studentId));
+			if (studentId) {
+				const student = await db.query.students.findFirst({
+					where: eq(students.studentId, studentId),
+				});
+
+				scholarConditions.push(
+					eq(scholars.studentId, student?.id ?? crypto.randomUUID()),
+				);
+			}
 
 			const matchedScholars = await db
 				.select({ id: scholars.id })

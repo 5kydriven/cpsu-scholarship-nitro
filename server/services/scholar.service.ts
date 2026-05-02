@@ -4,12 +4,55 @@ import {
 	scholars,
 	scholarshipOfferings,
 	students,
+	type Application,
+	type NewScholar,
 	type ScholarshipOffering,
 } from '../db';
 import { buildMeta, toOffset } from '#server/utils/pagination.ts';
 import type { ScholarQuery } from '#server/validators/application.validator.ts';
 
+function toScholarNo(
+	code: string | null,
+	academicYear: string,
+	semester: string,
+) {
+	const prefix = code?.trim() || 'SCH';
+	const year = academicYear.replace(/[^0-9]/g, '');
+	return `${prefix}-${year}-${semester}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
 export const scholarService = {
+	async createForApplication(
+		application: Application,
+		offering: ScholarshipOffering & {
+			program?: { code: string | null } | null;
+		},
+		executor: typeof db | any = db,
+	) {
+		const existing = await executor.query.scholars.findFirst({
+			where: eq(scholars.applicationId, application.id),
+		});
+
+		if (existing) return existing;
+
+		const [scholar] = await executor
+			.insert(scholars)
+			.values({
+				studentId: application.studentId,
+				applicationId: application.id,
+				offeringId: application.offeringId,
+				scholarNo: toScholarNo(
+					offering.program?.code ?? null,
+					offering.academicYear,
+					offering.semester,
+				),
+				status: 'active',
+			} satisfies NewScholar)
+			.returning();
+
+		return scholar;
+	},
+
 	async list(query: ScholarQuery) {
 		const {
 			page,

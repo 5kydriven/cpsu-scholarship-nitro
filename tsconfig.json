@@ -1,8 +1,12 @@
 {
-  "extends": ["nitro/tsconfig"],
-  "compilerOptions": {
-    "paths": {
-      "~/*": ["./*"]
-    }
-  }
+	"extends": ["nitro/tsconfig"],
+	"compilerOptions": {
+		"paths": {
+			"~/*": ["./*"]
+		},
+		"strict": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true
+	},
+	"exclude": ["tests", ".output"]
 }

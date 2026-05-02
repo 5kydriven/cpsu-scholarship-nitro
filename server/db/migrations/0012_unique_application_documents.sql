@@ -1,0 +1,1 @@
+ALTER TABLE "documents" ADD CONSTRAINT "documents_application_type_key" UNIQUE("application_id","type");

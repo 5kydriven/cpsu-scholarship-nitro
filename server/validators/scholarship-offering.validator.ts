@@ -1,4 +1,5 @@
 import z from 'zod';
+import { searchSchema } from './shared.validator';
 
 const amountSchema = z.coerce
 	.number()
@@ -38,7 +39,9 @@ function endDateAfterStartDate(data: {
 }) {
 	if (!data.applicationStartAt || !data.applicationEndAt) return true;
 
-	return Date.parse(data.applicationEndAt) > Date.parse(data.applicationStartAt);
+	return (
+		Date.parse(data.applicationEndAt) > Date.parse(data.applicationStartAt)
+	);
 }
 
 export const createScholarshipOfferingSchema = scholarshipOfferingFields.refine(
@@ -58,6 +61,10 @@ export const updateScholarshipOfferingSchema = scholarshipOfferingFields
 		message: 'applicationEndAt must be after applicationStartAt',
 		path: ['applicationEndAt'],
 	});
+
+export const scholarshipOfferingsQuerySchema = searchSchema.extend({
+	status: z.enum(['draft', 'open', 'closed', 'archived']).optional(),
+});
 
 export type CreateScholarshipOfferingSchema = z.infer<
 	typeof createScholarshipOfferingSchema

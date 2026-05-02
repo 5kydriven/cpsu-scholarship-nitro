@@ -15,7 +15,12 @@ export const confirmPayoutReceiptSchema = z.object({
 
 export const payoutQuerySchema = searchSchema.extend({
 	offeringId: z.uuid('Invalid scholarship offering id').optional(),
-	studentId: z.uuid('Invalid student id').optional(),
+	studentId: z
+		.string()
+		.trim()
+		.min(1, 'Student ID is required')
+		.max(100)
+		.optional(),
 	status: z.enum(['pending', 'released', 'received', 'cancelled']).optional(),
 });
 

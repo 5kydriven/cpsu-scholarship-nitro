@@ -16,31 +16,12 @@ export default defineHandler(async (event) => {
 			throw new ValidationError(z.treeifyError(error));
 		}
 
-		const rows = [];
-
-		if (data.father) {
-			rows.push({
-				...(data.father as Required<typeof data.father>),
-				type: 'father',
+		const rows = [
+			{
+				...data,
 				studentId: studentId ?? '',
-			});
-		}
-
-		if (data.mother) {
-			rows.push({
-				...(data.mother as Required<typeof data.mother>),
-				type: 'mother',
-				studentId: studentId ?? '',
-			});
-		}
-
-		if (data.guardian) {
-			rows.push({
-				...(data.guardian as Required<typeof data.guardian>),
-				type: 'guardian',
-				studentId: studentId ?? '',
-			});
-		}
+			},
+		];
 
 		const response = await studentParentService.createMany(rows);
 

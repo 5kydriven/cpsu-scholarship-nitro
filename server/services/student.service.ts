@@ -1,12 +1,8 @@
 import { and, asc, count, desc, eq, ilike, or, SQL } from 'drizzle-orm';
 import {
-	addresses,
 	db,
-	studentParents,
 	students,
-	type NewAddress,
 	type NewStudent,
-	type NewStudentParent,
 } from '../db';
 import { ConflictError, NotFoundError } from '#server/utils/errors.ts';
 import {
@@ -39,84 +35,45 @@ export const studentService = {
 		userId: string,
 		email: string | undefined,
 		input: CreateStudentSchema,
+		executor: typeof db | any = db,
 	) {
-		return await db.transaction(async (tx) => {
-			const studentValues = {
-				id: userId,
-				studentId: input.studentId,
-				firstName: input.firstName,
-				lastName: input.lastName,
-				middleName: input.middleName,
-				extName: input.extName,
-				birthdate: input.birthdate,
-				birthplace: input.birthplace,
-				contactNumber: input.contactNumber,
-				email: input.email ?? email,
-				sex: input.sex,
-				courseId: input.courseId,
-				yearLevel: input.yearLevel,
-			} satisfies NewStudent;
+		const studentValues = {
+			id: userId,
+			studentId: input.studentId,
+			firstName: input.firstName,
+			lastName: input.lastName,
+			middleName: input.middleName,
+			extName: input.extName,
+			birthdate: input.birthdate,
+			birthplace: input.birthplace,
+			contactNumber: input.contactNumber,
+			email: input.email ?? email,
+			sex: input.sex,
+			courseId: input.courseId,
+			yearLevel: input.yearLevel,
+		} satisfies NewStudent;
 
-			const existingStudent = await tx.query.students.findFirst({
-				where: eq(students.id, userId),
-			});
-
-			const [student] = existingStudent
-				? await tx
-						.update(students)
-						.set(studentValues)
-						.where(eq(students.id, userId))
-						.returning()
-				: await tx.insert(students).values(studentValues).returning();
-
-			const addressValues = {
-				studentId: userId,
-				street: input.address.street,
-				barangay: input.address.barangay,
-				city: input.address.city,
-				province: input.address.province,
-				zipcode: input.address.zipcode,
-			} satisfies NewAddress;
-
-			const existingAddress = await tx.query.addresses.findFirst({
-				where: eq(addresses.studentId, userId),
-			});
-
-			const [address] = existingAddress
-				? await tx
-						.update(addresses)
-						.set(addressValues)
-						.where(eq(addresses.studentId, userId))
-						.returning()
-				: await tx.insert(addresses).values(addressValues).returning();
-
-			await tx.delete(studentParents).where(eq(studentParents.studentId, userId));
-
-			const parentRows = input.parents.map(
-				(parent) =>
-					({
-						studentId: userId,
-						type: parent.type,
-						firstName: parent.firstName,
-						lastName: parent.lastName,
-						middleName: parent.middleName,
-						extName: parent.extName,
-						occupation: parent.occupation,
-						monthlyIncome: parent.monthlyIncome,
-						status: parent.status,
-						contactNumber: parent.contactNumber,
-						email: parent.email,
-					}) satisfies NewStudentParent,
-			);
-
-			const parents = await tx.insert(studentParents).values(parentRows).returning();
-
-			return {
-				student,
-				address,
-				parents,
-			};
+		const existingStudent = await executor.query.students.findFirst({
+			where: eq(students.id, userId),
 		});
+
+		const existingStudentId = await executor.query.students.findFirst({
+			where: eq(students.studentId, input.studentId),
+		});
+
+		if (existingStudentId && existingStudentId.id !== userId) {
+			throw new ConflictError('Student ID already exists');
+		}
+
+		const [student] = existingStudent
+			? await executor
+					.update(students)
+					.set(studentValues)
+					.where(eq(students.id, userId))
+					.returning()
+			: await executor.insert(students).values(studentValues).returning();
+
+		return student;
 	},
 
 	async getById(id: string) {
@@ -139,7 +96,7 @@ export const studentService = {
 		return student;
 	},
 
-	async update(id: string, student: NewStudent) {},
+	async update(_id: string, _student: NewStudent) {},
 
 	async getAll(
 		query: PaginationInput & {

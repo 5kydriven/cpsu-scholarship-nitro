@@ -93,7 +93,7 @@ export function noContentResponse(): Response {
  *   }
  * });
  */
-export function handleError(event: H3Event, error: unknown): Response {
+export function handleError(_event: H3Event, error: unknown): Response {
 	// Known application error
 	if (error instanceof AppError) {
 		return new Response(

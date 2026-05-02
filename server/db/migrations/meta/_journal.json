@@ -78,6 +78,20 @@
       "when": 1777653277081,
       "tag": "0010_form_normalization",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777732244185,
+      "tag": "0011_unique_student_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1777735237766,
+      "tag": "0012_unique_application_documents",
+      "breakpoints": true
     }
   ]
 }

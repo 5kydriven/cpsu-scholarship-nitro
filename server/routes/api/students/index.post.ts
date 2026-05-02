@@ -1,3 +1,6 @@
+import { db } from '#server/db/index.ts';
+import { addressService } from '#server/services/address.service.ts';
+import { studentParentService } from '#server/services/student-parent.service.ts';
 import { studentService } from '#server/services/student.service.ts';
 import { UnauthorizedError, ValidationError } from '#server/utils/errors.ts';
 import { requestBody } from '#server/utils/request-body.ts';
@@ -19,11 +22,30 @@ export default defineHandler(async (event) => {
 			throw new ValidationError(z.treeifyError(error));
 		}
 
-		const result = await studentService.upsertProfile(
-			event.context.user.id,
-			event.context.user.email,
-			data,
-		);
+		const result = await db.transaction(async (tx) => {
+			const student = await studentService.upsertProfile(
+				event.context.user.id,
+				event.context.user.email,
+				data,
+				tx,
+			);
+			const address = await addressService.upsertForStudent(
+				event.context.user.id,
+				data.address,
+				tx,
+			);
+			const parents = await studentParentService.replaceForStudent(
+				event.context.user.id,
+				data.parents,
+				tx,
+			);
+
+			return {
+				student,
+				address,
+				parents,
+			};
+		});
 
 		return successResponse(result);
 	} catch (err) {

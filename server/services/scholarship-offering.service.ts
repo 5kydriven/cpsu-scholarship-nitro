@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, count, desc, eq, SQL } from 'drizzle-orm';
 import {
 	db,
 	scholarshipOfferings,
@@ -10,8 +10,12 @@ import {
 	ConflictError,
 	NotFoundError,
 } from '#server/utils/errors.ts';
-import { paramsSchema } from '#server/validators/shared.validator.ts';
+import {
+	paramsSchema,
+	type PaginationInput,
+} from '#server/validators/shared.validator.ts';
 import type { UpdateScholarshipOfferingSchema } from '#server/validators/scholarship-offering.validator.ts';
+import { buildMeta, toOffset } from '#server/utils/pagination.ts';
 
 function assertValidId(id: string) {
 	const parsed = paramsSchema.safeParse({ id });
@@ -150,5 +154,46 @@ export const scholarshipOfferingService = {
 		if (!result) throw new NotFoundError('Scholarship offering');
 
 		return await this.getById(result.id);
+	},
+
+	async getAll(
+		query: PaginationInput & {
+			status?: 'draft' | 'open' | 'closed' | 'archived';
+		},
+	) {
+		const { page, limit, sortOrder, status } = query;
+
+		const conditions: SQL[] = [];
+
+		if (status) {
+			conditions.push(eq(scholarshipOfferings.status, status));
+		}
+
+		const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+		const orderCol = scholarshipOfferings.createdAt;
+		const order = sortOrder === 'desc' ? desc(orderCol) : asc(orderCol);
+
+		const countResult = await db
+			.select({ total: count() })
+			.from(scholarshipOfferings)
+			.where(where);
+
+		const total = countResult[0]?.total ?? 0;
+
+		const data = await db.query.scholarshipOfferings.findMany({
+			where,
+			limit,
+			offset: toOffset(page, limit),
+			orderBy: order,
+			with: {
+				program: true,
+			},
+		});
+
+		return {
+			data,
+			meta: buildMeta(total, page, limit),
+		};
 	},
 };

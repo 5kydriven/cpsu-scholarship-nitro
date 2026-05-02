@@ -1,12 +1,33 @@
 import { z } from 'zod';
+import {
+	isMultipartDocumentFile,
+	type MultipartDocumentFile,
+} from '#server/utils/multipart-form.ts';
 import { searchSchema } from './shared.validator';
-import { applicationDocumentSchema, createStudentSchema } from './student.validation';
+import { createStudentSchema } from './student.validation';
+
+const applicationProfileSchema = createStudentSchema.omit({ studentId: true });
+
+const submitApplicationDocumentSchema = z.object({
+	type: z
+	.string()
+		.trim()
+		.min(1)
+		.max(100)
+		.regex(/^[a-z0-9_]+$/, 'Document type must be snake_case'),
+	file: z.custom<MultipartDocumentFile>(isMultipartDocumentFile, {
+		message: 'Document file is required',
+	}),
+});
 
 export const submitApplicationSchema = z.object({
+	studentId: z.string().trim().min(1, 'Student ID is required').max(100),
 	offeringId: z.uuid('Invalid scholarship offering id'),
-	profile: createStudentSchema.optional(),
+	profile: applicationProfileSchema,
 	extraAnswers: z.record(z.string(), z.unknown()).default({}),
-	documents: z.array(applicationDocumentSchema).default([]),
+	documents: z
+		.array(submitApplicationDocumentSchema)
+		.min(1, 'At least one document is required'),
 });
 
 export type SubmitApplicationInput = z.infer<typeof submitApplicationSchema>;

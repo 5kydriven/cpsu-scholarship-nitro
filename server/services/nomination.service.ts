@@ -28,9 +28,41 @@ import type {
 } from '#server/validators/nomination.validator.ts';
 
 export const nominationService = {
+	async findPendingByStudentAndOffering(
+		studentId: string,
+		offeringId: string,
+		executor: typeof db | any = db,
+	) {
+		return await executor.query.scholarshipNominations.findFirst({
+			where: and(
+				eq(scholarshipNominations.studentId, studentId),
+				eq(scholarshipNominations.offeringId, offeringId),
+				eq(scholarshipNominations.status, 'pending'),
+			),
+		});
+	},
+
+	async complete(
+		id: string,
+		applicationId: string,
+		executor: typeof db | any = db,
+	) {
+		const [nomination] = await executor
+			.update(scholarshipNominations)
+			.set({
+				applicationId,
+				status: 'completed',
+				updatedAt: new Date().toISOString(),
+			})
+			.where(eq(scholarshipNominations.id, id))
+			.returning();
+
+		return nomination;
+	},
+
 	async create(input: CreateNominationInput, personnelId: string) {
 		const student = await db.query.students.findFirst({
-			where: eq(students.id, input.studentId),
+			where: eq(students.studentId, input.studentId),
 		});
 
 		if (!student) throw new NotFoundError('Student');
@@ -54,7 +86,7 @@ export const nominationService = {
 
 		const existing = await db.query.scholarshipNominations.findFirst({
 			where: and(
-				eq(scholarshipNominations.studentId, input.studentId),
+				eq(scholarshipNominations.studentId, student.id),
 				eq(scholarshipNominations.offeringId, input.offeringId),
 			),
 		});
@@ -66,7 +98,7 @@ export const nominationService = {
 		const [nomination] = await db
 			.insert(scholarshipNominations)
 			.values({
-				studentId: input.studentId,
+				studentId: student.id,
 				offeringId: input.offeringId,
 				nominatedBy: personnelId,
 				remarks: input.remarks,

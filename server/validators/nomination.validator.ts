@@ -2,7 +2,7 @@ import z from 'zod';
 import { searchSchema } from './shared.validator';
 
 export const createNominationSchema = z.object({
-	studentId: z.uuid('Invalid student id'),
+	studentId: z.string().trim().min(1, 'Student ID is required').max(100),
 	offeringId: z.uuid('Invalid scholarship offering id'),
 	remarks: z.string().trim().max(500).optional(),
 });

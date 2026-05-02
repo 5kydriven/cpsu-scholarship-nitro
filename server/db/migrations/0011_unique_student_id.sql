@@ -1,0 +1,1 @@
+ALTER TABLE "students" ADD CONSTRAINT "students_student_id_key" UNIQUE("student_id");

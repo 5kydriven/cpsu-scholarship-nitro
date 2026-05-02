@@ -121,6 +121,8 @@ function normalizeProfile(source: unknown) {
 		'profile.studentId',
 		'student.studentId',
 		'studentId',
+		'studentNumber',
+		'schoolStudentId',
 	]));
 	setIfPresent(profile, 'firstName', firstValue(source, [
 		'profile.firstName',
@@ -251,6 +253,13 @@ export function normalizeScholarshipApplicationPayload(payload: unknown) {
 	if (profile) normalized.profile = profile;
 
 	normalized.extraAnswers = normalizeExtraAnswers(payload);
+	normalized.studentId = firstValue(payload, [
+		'studentId',
+		'profile.studentId',
+		'student.studentId',
+		'studentNumber',
+		'schoolStudentId',
+	]);
 	normalized.offeringId = firstValue(payload, ['offeringId', 'offering.id']);
 	normalized.documents = firstValue(payload, ['documents']) ?? [];
 
