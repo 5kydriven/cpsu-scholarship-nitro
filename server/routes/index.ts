@@ -170,7 +170,8 @@ const applicationFormData = [
 const apiGroups: ApiGroup[] = [
 	{
 		title: 'Auth',
-		description: 'Public login/register routes plus authenticated session helpers.',
+		description:
+			'Public login/register routes plus authenticated session helpers.',
 		endpoints: [
 			{
 				method: 'POST',
@@ -342,7 +343,8 @@ const apiGroups: ApiGroup[] = [
 				path: '/api/courses/:id',
 				access: 'Authenticated',
 				input: 'application/json or multipart/form-data',
-				summary: 'Updates a course. All fields are optional, but send at least one.',
+				summary:
+					'Updates a course. All fields are optional, but send at least one.',
 				payload: ['name?: string', 'abbreviation?: string', 'major?: string'],
 				example: {
 					name: 'bachelor of science in information technology',
@@ -467,7 +469,8 @@ const apiGroups: ApiGroup[] = [
 	},
 	{
 		title: 'Scholarship Offerings',
-		description: 'Scholarship program openings for an academic year and semester.',
+		description:
+			'Scholarship program openings for an academic year and semester.',
 		endpoints: [
 			{
 				method: 'POST',
@@ -500,8 +503,9 @@ const apiGroups: ApiGroup[] = [
 				method: 'GET',
 				path: '/api/scholarship-offerings',
 				access: 'Authenticated',
-				input: 'No body',
-				summary: 'Lists open scholarship offerings.',
+				input: 'Query params',
+				summary: 'Lists scholarship offerings with pagination.',
+				payload: [...commonListQuery, 'status?: draft, open, closed, archived'],
 			},
 			{
 				method: 'GET',
@@ -524,14 +528,16 @@ const apiGroups: ApiGroup[] = [
 	},
 	{
 		title: 'Applications',
-		description: 'Student scholarship application submission and review routes.',
+		description:
+			'Student scholarship application submission and review routes.',
 		endpoints: [
 			{
 				method: 'POST',
 				path: '/api/applications',
 				access: 'Student',
 				input: 'multipart/form-data',
-				summary: 'Submits a scholarship application for the authenticated student.',
+				summary:
+					'Submits a scholarship application for the authenticated student.',
 				payload: [
 					'Postman Body type: form-data',
 					'studentId: Text, school student ID such as 2024-0001',
@@ -841,8 +847,9 @@ function countEndpoints(status?: EndpointStatus) {
 	return apiGroups.reduce((total, group) => {
 		return (
 			total +
-			group.endpoints.filter((endpoint) => !status || endpoint.status === status)
-				.length
+			group.endpoints.filter(
+				(endpoint) => !status || endpoint.status === status,
+			).length
 		);
 	}, 0);
 }
