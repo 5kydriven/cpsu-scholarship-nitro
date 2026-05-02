@@ -1,4 +1,4 @@
-import { personnelService } from '#server/service/personnel.service.ts';
+import { personnelService } from '#server/services/personnel.service.ts';
 import { NotFoundError } from '#server/utils/errors.ts';
 import { handleError, successResponse } from '#server/utils/response.ts';
 import { defineHandler } from 'nitro';

@@ -1,4 +1,4 @@
-import { studentService } from '#server/service/student.service.ts';
+import { studentService } from '#server/services/student.service.ts';
 import { ValidationError } from '#server/utils/errors.ts';
 import { handleError, successResponse } from '#server/utils/response.ts';
 import { studentQuerySchema } from '#server/validators/student.validation.ts';

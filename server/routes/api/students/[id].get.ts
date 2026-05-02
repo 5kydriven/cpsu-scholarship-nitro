@@ -1,4 +1,4 @@
-import { studentService } from '#server/service/student.service.ts';
+import { studentService } from '#server/services/student.service.ts';
 import { NotFoundError } from '#server/utils/errors.ts';
 import { handleError, successResponse } from '#server/utils/response.ts';
 import { defineHandler } from 'nitro';

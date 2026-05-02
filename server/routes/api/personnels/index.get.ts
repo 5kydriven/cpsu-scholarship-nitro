@@ -1,4 +1,4 @@
-import { personnelService } from '#server/service/personnel.service.ts';
+import { personnelService } from '#server/services/personnel.service.ts';
 import { ValidationError } from '#server/utils/errors.ts';
 import { handleError, successResponse } from '#server/utils/response.ts';
 import { personnelQuerySchema } from '#server/validators/personnel.validator.ts';

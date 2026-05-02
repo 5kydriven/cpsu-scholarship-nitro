@@ -4,6 +4,7 @@ import { createParentSchema } from './parent.validator';
 import { searchSchema } from './shared.validator';
 
 export const createStudentSchema = z.object({
+	studentId: z.string().trim().min(1, 'Student ID is required').max(100),
 	firstName: z
 		.string()
 		.trim()
@@ -19,11 +20,19 @@ export const createStudentSchema = z.object({
 	middleName: z.string().trim().toLowerCase().max(100).optional(),
 	extName: z.string().trim().toLowerCase().max(20).optional(),
 	birthdate: z.string().min(1, 'Birthdate is required').max(100),
+	birthplace: z
+		.string()
+		.trim()
+		.toLowerCase()
+		.min(1, 'Birthplace is required')
+		.max(200),
 	contactNumber: z
 		.string()
-		.regex(/^09\d{9}$/, 'Invalid PH mobile number')
+		.regex(/^(09\d{9}|\+639\d{9})$/, 'Invalid PH mobile number')
 		.transform((v) => v.replace(/^0/, '+63')),
+	email: z.string().email().max(200).optional(),
 	sex: z.enum(['male', 'female']),
+	courseId: z.uuid('Invalid course id').optional(),
 	yearLevel: z.coerce.number().int().min(1).max(6),
 	address: createAddressSchema,
 	parents: z
@@ -32,7 +41,25 @@ export const createStudentSchema = z.object({
 		.refine(
 			(parents) => new Set(parents.map((p) => p.type)).size === parents.length,
 			'Duplicate parent type',
-		),
+	),
+});
+
+export const applicationDocumentSchema = z.object({
+	field: z.string().trim().min(1).max(100),
+	type: z
+		.string()
+		.trim()
+		.min(1)
+		.max(100)
+		.regex(/^[a-z0-9_]+$/, 'Document type must be snake_case'),
+});
+
+export const createStudentApplicationSchema = createStudentSchema.extend({
+	offeringId: z.uuid('Invalid scholarship offering id'),
+	extraAnswers: z.record(z.string(), z.unknown()).default({}),
+	documents: z
+		.array(applicationDocumentSchema)
+		.min(1, 'At least one document is required'),
 });
 
 export const studentQuerySchema = searchSchema.extend({
@@ -41,3 +68,7 @@ export const studentQuerySchema = searchSchema.extend({
 });
 
 export type CreateStudentSchema = z.infer<typeof createStudentSchema>;
+export type CreateStudentApplicationSchema = z.infer<
+	typeof createStudentApplicationSchema
+>;
+export type ApplicationDocumentInput = z.infer<typeof applicationDocumentSchema>;

@@ -1,11 +1,16 @@
 import { and, asc, count, desc, eq, ilike, or, SQL } from 'drizzle-orm';
-import { db, students, type NewStudent } from '../db';
+import {
+	db,
+	students,
+	type NewStudent,
+} from '../db';
 import { ConflictError, NotFoundError } from '#server/utils/errors.ts';
 import {
 	paramsSchema,
 	type PaginationInput,
 } from '#server/validators/shared.validator.ts';
 import { buildMeta, toOffset } from '#server/utils/pagination.ts';
+import type { CreateStudentSchema } from '#server/validators/student.validation.ts';
 
 export const studentService = {
 	async create(student: NewStudent) {
@@ -24,6 +29,51 @@ export const studentService = {
 			.values(student)
 			.returning();
 		return newStudent;
+	},
+
+	async upsertProfile(
+		userId: string,
+		email: string | undefined,
+		input: CreateStudentSchema,
+		executor: typeof db | any = db,
+	) {
+		const studentValues = {
+			id: userId,
+			studentId: input.studentId,
+			firstName: input.firstName,
+			lastName: input.lastName,
+			middleName: input.middleName,
+			extName: input.extName,
+			birthdate: input.birthdate,
+			birthplace: input.birthplace,
+			contactNumber: input.contactNumber,
+			email: input.email ?? email,
+			sex: input.sex,
+			courseId: input.courseId,
+			yearLevel: input.yearLevel,
+		} satisfies NewStudent;
+
+		const existingStudent = await executor.query.students.findFirst({
+			where: eq(students.id, userId),
+		});
+
+		const existingStudentId = await executor.query.students.findFirst({
+			where: eq(students.studentId, input.studentId),
+		});
+
+		if (existingStudentId && existingStudentId.id !== userId) {
+			throw new ConflictError('Student ID already exists');
+		}
+
+		const [student] = existingStudent
+			? await executor
+					.update(students)
+					.set(studentValues)
+					.where(eq(students.id, userId))
+					.returning()
+			: await executor.insert(students).values(studentValues).returning();
+
+		return student;
 	},
 
 	async getById(id: string) {
@@ -46,7 +96,7 @@ export const studentService = {
 		return student;
 	},
 
-	async update(id: string, student: NewStudent) {},
+	async update(_id: string, _student: NewStudent) {},
 
 	async getAll(
 		query: PaginationInput & {

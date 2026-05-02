@@ -37,6 +37,7 @@ export type AppRole = 'admin' | 'student' | 'staff';
 export interface AppStudent {
 	/** UUID — same as auth.users.id (students_auth_fk) */
 	id: string;
+	studentId: string | null;
 	lastName: string | null;
 	firstName: string | null;
 	middleName: string | null;
@@ -47,9 +48,12 @@ export interface AppStudent {
 
 	/** ISO date string, e.g. "2003-04-15" */
 	birthdate: string | null;
+	birthplace: string | null;
 
 	contactNumber: string | null;
 	email: string | null;
+	courseId: string | null;
+	yearLevel: number | null;
 
 	/** ISO timestamp string */
 	createdAt: string | null;
