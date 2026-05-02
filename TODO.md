@@ -7,3 +7,5 @@
 - [ ] integrate AI for selecting the scholarship
 - [ ] change email into student ID in auth
 - [ ] add a seeder for student ID
+
+Notes: 0012 migration push in prod
