@@ -178,12 +178,35 @@ const apiGroups: ApiGroup[] = [
 				path: '/api/auth/register',
 				access: 'Public',
 				input: 'application/json or multipart/form-data',
-				summary: 'Creates a student Supabase Auth user.',
-				payload: ['email: valid email', 'password: string, min 8 characters'],
+				summary:
+					'Creates a student Supabase Auth user and links an imported student ID.',
+				payload: [
+					'studentId: imported school student ID, currently unlinked',
+					'email: valid email',
+					'password: string, min 8 characters',
+				],
 				example: {
+					studentId: '2024-0001',
 					email: 'student@example.com',
 					password: 'password123',
 				},
+			},
+			{
+				method: 'POST',
+				path: '/api/auth/student-id/check',
+				access: 'Public',
+				input: 'application/json or multipart/form-data',
+				summary:
+					'Checks whether an imported student ID is linked to an account.',
+				payload: ['studentId: imported school student ID'],
+				example: {
+					studentId: '2024-0001',
+				},
+				notes: [
+					'Returns status linked when the frontend should show the password field.',
+					'Returns status unlinked when the frontend should continue to registration with email and password.',
+					'Returns 404 when the student ID was not imported.',
+				],
 			},
 			{
 				method: 'POST',
@@ -191,12 +214,19 @@ const apiGroups: ApiGroup[] = [
 				access: 'Public',
 				input: 'application/json or multipart/form-data',
 				summary:
-					'Signs in with Supabase and sets sb-access-token and sb-refresh-token cookies.',
-				payload: ['email: valid email', 'password: string'],
+					'Signs in with email or linked student ID and sets sb-access-token and sb-refresh-token cookies.',
+				payload: [
+					'email: valid email OR studentId: linked school student ID',
+					'password: string',
+				],
 				example: {
-					email: 'student@example.com',
+					studentId: '2024-0001',
 					password: 'password123',
 				},
+				notes: [
+					'Email/password login remains supported.',
+					'Student ID login requires the roster row to be linked to an account.',
+				],
 			},
 			{
 				method: 'GET',
@@ -266,6 +296,76 @@ const apiGroups: ApiGroup[] = [
 				input: 'No body',
 				summary: 'Not ready. Current handler is empty.',
 				status: 'not-ready',
+			},
+		],
+	},
+	{
+		title: 'Student ID Roster',
+		description:
+			'Staff/admin roster routes for imported school student IDs used by student ID login.',
+		endpoints: [
+			{
+				method: 'POST',
+				path: '/api/admin/student-id-roster/import',
+				access: 'Staff/Admin',
+				input: 'multipart/form-data',
+				summary:
+					'Imports school student IDs for the student ID login and registration flow.',
+				payload: [
+					'file: CSV, TSV, XLS, or XLSX upload',
+					'Headers must be exactly Student ID No., Name',
+					'Each row creates or updates the student_id_roster table',
+				],
+				example: [
+					{
+						key: 'file',
+						type: 'File',
+						value:
+							'CSV/Excel file with columns Student ID No., Name',
+					},
+				],
+				notes: [
+					'student_id_roster.student_id is unique.',
+					'Imported names are stored for reference.',
+					'Importing an existing linked student ID updates the stored reference data but does not unlink the account.',
+				],
+			},
+			{
+				method: 'PUT',
+				path: '/api/admin/student-id-roster/:id',
+				access: 'Staff/Admin',
+				input: 'application/json or multipart/form-data',
+				summary: 'Edits one student_id_roster row by roster UUID.',
+				payload: [
+					'studentId?: unique school student ID',
+					'fullName?: student name from school roster',
+				],
+				example: {
+					studentId: '2025-0015-R',
+					fullName: 'ABELO, JANEL',
+				},
+			},
+			{
+				method: 'DELETE',
+				path: '/api/admin/student-id-roster/:id',
+				access: 'Staff/Admin',
+				input: 'No body',
+				summary: 'Deletes one student_id_roster row by roster UUID.',
+			},
+			{
+				method: 'POST',
+				path: '/api/admin/student-id-roster/batch-delete',
+				access: 'Staff/Admin',
+				input: 'application/json or multipart/form-data',
+				summary: 'Deletes multiple student_id_roster rows by UUIDs or student IDs.',
+				payload: [
+					'ids?: roster UUID[]',
+					'studentIds?: unique school student ID[]',
+					'Send at least one of ids or studentIds',
+				],
+				example: {
+					studentIds: ['2025-0015-R', '2025-0075-R'],
+				},
 			},
 		],
 	},
