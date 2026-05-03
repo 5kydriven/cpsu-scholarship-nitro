@@ -103,7 +103,6 @@ export function handleError(_event: H3Event, error: unknown): Response {
 					code: error.code,
 					message: error.message,
 					...(error.details !== undefined ? { details: error.details } : {}),
-					context: event.context,
 				},
 			} satisfies ErrorResponse),
 			{
