@@ -1,14 +1,17 @@
-import { UnauthorizedError } from '#server/utils/errors.ts';
+import { InternalError } from '#server/utils/errors.ts';
 import { handleError, successResponse } from '#server/utils/response.ts';
 import { defineHandler } from 'nitro';
 
 export default defineHandler(async (event) => {
 	try {
 		if (!event.context.user) {
-			throw new UnauthorizedError('Unauthorized');
+			throw new InternalError();
 		}
-		console.log(event.context.student);
-		return successResponse(event.context.user);
+		return successResponse({
+			id: event.context.user.id,
+			email: event.context.user.email,
+			role: event.context.role,
+		});
 	} catch (err) {
 		return handleError(event, err);
 	}

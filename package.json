@@ -2,7 +2,7 @@
 	"name": "nitro-starter",
 	"type": "module",
 	"scripts": {
-		"build": "tsc --noEmit && nitro build",
+		"build": “nitro build",
 		"dev": "nitro dev",
 		"preview": "nitro preview",
 		"test": "bun test",
