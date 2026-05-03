@@ -8,4 +8,4 @@
 - [ ] change email into student ID in auth
 - [ ] add a seeder for student ID
 
-Notes: 0012 migration push in prod
+Notes: 0013 migration push in prod
