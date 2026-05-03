@@ -5,6 +5,11 @@ export { personnels, type Personnel, type NewPersonnel } from './personnels';
 export { addresses, type Address, type NewAddress } from './addresses';
 export { students, type Student, type NewStudent } from './students';
 export {
+	studentIdRoster,
+	type StudentIdRoster,
+	type NewStudentIdRoster,
+} from './student_id_roster';
+export {
 	studentParents,
 	type StudentParent,
 	type NewStudentParent,

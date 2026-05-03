@@ -12,6 +12,7 @@ import type { User } from '@supabase/supabase-js';
 const PUBLIC_ROUTES: string[] = [
 	'/api/auth/register',
 	'/api/auth/login',
+	'/api/auth/student-id/check',
 	// '/api/personnels', for dev purpose
 ];
 

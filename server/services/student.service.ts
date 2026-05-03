@@ -5,6 +5,7 @@ import {
 	type NewStudent,
 } from '../db';
 import { ConflictError, NotFoundError } from '#server/utils/errors.ts';
+import { studentIdRosterService } from '#server/services/student-id-roster.service.ts';
 import {
 	paramsSchema,
 	type PaginationInput,
@@ -37,6 +38,12 @@ export const studentService = {
 		input: CreateStudentSchema,
 		executor: typeof db | any = db,
 	) {
+		await studentIdRosterService.assertUserCanUseStudentId(
+			userId,
+			input.studentId,
+			executor,
+		);
+
 		const studentValues = {
 			id: userId,
 			studentId: input.studentId,

@@ -178,12 +178,35 @@ const apiGroups: ApiGroup[] = [
 				path: '/api/auth/register',
 				access: 'Public',
 				input: 'application/json or multipart/form-data',
-				summary: 'Creates a student Supabase Auth user.',
-				payload: ['email: valid email', 'password: string, min 8 characters'],
+				summary:
+					'Creates a student Supabase Auth user and links an imported student ID.',
+				payload: [
+					'studentId: imported school student ID, currently unlinked',
+					'email: valid email',
+					'password: string, min 8 characters',
+				],
 				example: {
+					studentId: '2024-0001',
 					email: 'student@example.com',
 					password: 'password123',
 				},
+			},
+			{
+				method: 'POST',
+				path: '/api/auth/student-id/check',
+				access: 'Public',
+				input: 'application/json or multipart/form-data',
+				summary:
+					'Checks whether an imported student ID is linked to an account.',
+				payload: ['studentId: imported school student ID'],
+				example: {
+					studentId: '2024-0001',
+				},
+				notes: [
+					'Returns status linked when the frontend should show the password field.',
+					'Returns status unlinked when the frontend should continue to registration with email and password.',
+					'Returns 404 when the student ID was not imported.',
+				],
 			},
 			{
 				method: 'POST',
@@ -191,12 +214,19 @@ const apiGroups: ApiGroup[] = [
 				access: 'Public',
 				input: 'application/json or multipart/form-data',
 				summary:
-					'Signs in with Supabase and sets sb-access-token and sb-refresh-token cookies.',
-				payload: ['email: valid email', 'password: string'],
+					'Signs in with email or linked student ID and sets sb-access-token and sb-refresh-token cookies.',
+				payload: [
+					'email: valid email OR studentId: linked school student ID',
+					'password: string',
+				],
 				example: {
-					email: 'student@example.com',
+					studentId: '2024-0001',
 					password: 'password123',
 				},
+				notes: [
+					'Email/password login remains supported.',
+					'Student ID login requires the roster row to be linked to an account.',
+				],
 			},
 			{
 				method: 'GET',
@@ -250,6 +280,30 @@ const apiGroups: ApiGroup[] = [
 				access: 'Authenticated',
 				input: 'No body',
 				summary: 'Returns one student by UUID path parameter.',
+			},
+			{
+				method: 'POST',
+				path: '/api/admin/students/import',
+				access: 'Staff/Admin',
+				input: 'multipart/form-data',
+				summary:
+					'Imports school student IDs for the student ID login and registration flow.',
+				payload: [
+					'file: CSV upload',
+					'CSV headers must be exactly student_id,name',
+					'Each row creates or updates the imported student ID roster',
+				],
+				example: [
+					{
+						key: 'file',
+						type: 'File',
+						value: 'CSV file with headers student_id,name',
+					},
+				],
+				notes: [
+					'Imported names are stored for reference only.',
+					'Importing an existing linked student ID updates the stored name but does not unlink the account.',
+				],
 			},
 			{
 				method: 'PUT',
