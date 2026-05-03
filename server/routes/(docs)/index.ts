@@ -282,30 +282,6 @@ const apiGroups: ApiGroup[] = [
 				summary: 'Returns one student by UUID path parameter.',
 			},
 			{
-				method: 'POST',
-				path: '/api/admin/students/import',
-				access: 'Staff/Admin',
-				input: 'multipart/form-data',
-				summary:
-					'Imports school student IDs for the student ID login and registration flow.',
-				payload: [
-					'file: CSV upload',
-					'CSV headers must be exactly student_id,name',
-					'Each row creates or updates the imported student ID roster',
-				],
-				example: [
-					{
-						key: 'file',
-						type: 'File',
-						value: 'CSV file with headers student_id,name',
-					},
-				],
-				notes: [
-					'Imported names are stored for reference only.',
-					'Importing an existing linked student ID updates the stored name but does not unlink the account.',
-				],
-			},
-			{
 				method: 'PUT',
 				path: '/api/students/:id',
 				access: 'Authenticated',
@@ -320,6 +296,76 @@ const apiGroups: ApiGroup[] = [
 				input: 'No body',
 				summary: 'Not ready. Current handler is empty.',
 				status: 'not-ready',
+			},
+		],
+	},
+	{
+		title: 'Student ID Roster',
+		description:
+			'Staff/admin roster routes for imported school student IDs used by student ID login.',
+		endpoints: [
+			{
+				method: 'POST',
+				path: '/api/admin/student-id-roster/import',
+				access: 'Staff/Admin',
+				input: 'multipart/form-data',
+				summary:
+					'Imports school student IDs for the student ID login and registration flow.',
+				payload: [
+					'file: CSV, TSV, XLS, or XLSX upload',
+					'Headers must be exactly Student ID No., Name',
+					'Each row creates or updates the student_id_roster table',
+				],
+				example: [
+					{
+						key: 'file',
+						type: 'File',
+						value:
+							'CSV/Excel file with columns Student ID No., Name',
+					},
+				],
+				notes: [
+					'student_id_roster.student_id is unique.',
+					'Imported names are stored for reference.',
+					'Importing an existing linked student ID updates the stored reference data but does not unlink the account.',
+				],
+			},
+			{
+				method: 'PUT',
+				path: '/api/admin/student-id-roster/:id',
+				access: 'Staff/Admin',
+				input: 'application/json or multipart/form-data',
+				summary: 'Edits one student_id_roster row by roster UUID.',
+				payload: [
+					'studentId?: unique school student ID',
+					'fullName?: student name from school roster',
+				],
+				example: {
+					studentId: '2025-0015-R',
+					fullName: 'ABELO, JANEL',
+				},
+			},
+			{
+				method: 'DELETE',
+				path: '/api/admin/student-id-roster/:id',
+				access: 'Staff/Admin',
+				input: 'No body',
+				summary: 'Deletes one student_id_roster row by roster UUID.',
+			},
+			{
+				method: 'POST',
+				path: '/api/admin/student-id-roster/batch-delete',
+				access: 'Staff/Admin',
+				input: 'application/json or multipart/form-data',
+				summary: 'Deletes multiple student_id_roster rows by UUIDs or student IDs.',
+				payload: [
+					'ids?: roster UUID[]',
+					'studentIds?: unique school student ID[]',
+					'Send at least one of ids or studentIds',
+				],
+				example: {
+					studentIds: ['2025-0015-R', '2025-0075-R'],
+				},
 			},
 		],
 	},

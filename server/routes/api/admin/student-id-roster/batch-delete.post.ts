@@ -1,22 +1,21 @@
 import { studentIdRosterService } from '#server/services/student-id-roster.service.ts';
-import { BadRequestError } from '#server/utils/errors.ts';
-import { isMultipartDocumentFile } from '#server/utils/multipart-form.ts';
+import { ValidationError } from '#server/utils/errors.ts';
 import { requestBody } from '#server/utils/request-body.ts';
 import { handleError, successResponse } from '#server/utils/response.ts';
-import { parseStudentRosterCsv } from '#server/utils/student-roster-csv.ts';
+import { batchDeleteStudentIdRosterSchema } from '#server/validators/student-id-roster.validator.ts';
 import { defineHandler } from 'nitro';
+import z from 'zod';
 
 export default defineHandler(async (event) => {
 	try {
 		const body = await requestBody(event);
-		const file = body.file;
+		const parsed = batchDeleteStudentIdRosterSchema.safeParse(body);
 
-		if (!isMultipartDocumentFile(file)) {
-			throw new BadRequestError('CSV file is required');
+		if (!parsed.success) {
+			throw new ValidationError(z.treeifyError(parsed.error));
 		}
 
-		const rows = await parseStudentRosterCsv(file);
-		const result = await studentIdRosterService.importRows(rows);
+		const result = await studentIdRosterService.deleteBatch(parsed.data);
 
 		return successResponse(result);
 	} catch (err) {

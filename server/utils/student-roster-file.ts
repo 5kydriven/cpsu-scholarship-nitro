@@ -1,18 +1,42 @@
+import type { StudentRosterImportRow } from '#server/services/student-id-roster.service.ts';
 import {
 	ImportError,
 	UnsupportedFileTypeError,
 } from '#server/utils/errors.ts';
 import type { MultipartDocumentFile } from '#server/utils/multipart-form.ts';
-import type { StudentRosterImportRow } from '#server/services/student-id-roster.service.ts';
+import * as XLSX from 'xlsx';
 
-const EXPECTED_HEADERS = ['student_id', 'name'];
+const EXPECTED_HEADERS = ['student id no.', 'name'];
+const SUPPORTED_TYPES = [
+	'text/csv',
+	'text/tab-separated-values',
+	'application/vnd.ms-excel',
+	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+];
 
-function isCsvFile(file: MultipartDocumentFile) {
-	const filename = file.filename.toLowerCase();
-	return file.type === 'text/csv' || filename.endsWith('.csv');
+function extension(file: MultipartDocumentFile) {
+	const name = file.filename.toLowerCase();
+	return name.slice(name.lastIndexOf('.') + 1);
 }
 
-function parseCsv(text: string) {
+function isSupportedFile(file: MultipartDocumentFile) {
+	return (
+		SUPPORTED_TYPES.includes(file.type) ||
+		['csv', 'tsv', 'txt', 'xls', 'xlsx'].includes(extension(file))
+	);
+}
+
+function delimiterFor(text: string, file: MultipartDocumentFile) {
+	if (extension(file) === 'tsv') return '\t';
+
+	const firstLine = text.split(/\r?\n/, 1)[0] ?? '';
+	const tabs = firstLine.split('\t').length - 1;
+	const commas = firstLine.split(',').length - 1;
+
+	return tabs > commas ? '\t' : ',';
+}
+
+function parseDelimited(text: string, delimiter: string) {
 	const rows: string[][] = [];
 	let row: string[] = [];
 	let field = '';
@@ -32,7 +56,7 @@ function parseCsv(text: string) {
 			continue;
 		}
 
-		if (char === ',' && !inQuotes) {
+		if (char === delimiter && !inQuotes) {
 			row.push(field);
 			field = '';
 			continue;
@@ -51,7 +75,7 @@ function parseCsv(text: string) {
 	}
 
 	if (inQuotes) {
-		throw new ImportError('CSV has an unterminated quoted value');
+		throw new ImportError('Spreadsheet has an unterminated quoted value');
 	}
 
 	if (field.length > 0 || row.length > 0) {
@@ -62,20 +86,46 @@ function parseCsv(text: string) {
 	return rows.filter((cells) => cells.some((cell) => cell.trim() !== ''));
 }
 
+async function parseWorkbook(file: MultipartDocumentFile) {
+	const buffer = await file.file.arrayBuffer();
+	const workbook = XLSX.read(buffer, { type: 'array' });
+	const firstSheet = workbook.SheetNames[0];
+
+	if (!firstSheet) {
+		throw new ImportError('Spreadsheet file is empty');
+	}
+
+	return XLSX.utils
+		.sheet_to_json<unknown[]>(workbook.Sheets[firstSheet]!, {
+			header: 1,
+			blankrows: false,
+			defval: '',
+		})
+		.map((row) => row.map((cell) => String(cell)));
+}
+
+async function parseRows(file: MultipartDocumentFile) {
+	if (['xls', 'xlsx'].includes(extension(file))) {
+		return await parseWorkbook(file);
+	}
+
+	const text = await file.file.text();
+	return parseDelimited(text, delimiterFor(text, file));
+}
+
 function normalizeHeader(value: string) {
 	return value.replace(/^\uFEFF/, '').trim().toLowerCase();
 }
 
-export async function parseStudentRosterCsv(file: MultipartDocumentFile) {
-	if (!isCsvFile(file)) {
-		throw new UnsupportedFileTypeError(['text/csv']);
+export async function parseStudentRosterFile(file: MultipartDocumentFile) {
+	if (!isSupportedFile(file)) {
+		throw new UnsupportedFileTypeError(SUPPORTED_TYPES);
 	}
 
-	const text = await file.file.text();
-	const rows = parseCsv(text);
+	const rows = await parseRows(file);
 
 	if (rows.length === 0) {
-		throw new ImportError('CSV file is empty');
+		throw new ImportError('Spreadsheet file is empty');
 	}
 
 	const headers = rows[0]!.map(normalizeHeader);
@@ -84,7 +134,9 @@ export async function parseStudentRosterCsv(file: MultipartDocumentFile) {
 		headers.every((header, index) => header === EXPECTED_HEADERS[index]);
 
 	if (!hasExpectedHeaders) {
-		throw new ImportError('CSV headers must be student_id,name');
+		throw new ImportError(
+			'Spreadsheet headers must be Student ID No.,Name',
+		);
 	}
 
 	const seen = new Set<string>();
@@ -127,7 +179,7 @@ export async function parseStudentRosterCsv(file: MultipartDocumentFile) {
 			errors.push({
 				row: rowNumber,
 				field: 'student_id',
-				reason: 'Duplicate student ID in CSV',
+				reason: 'Duplicate student ID in file',
 			});
 		}
 
@@ -138,7 +190,7 @@ export async function parseStudentRosterCsv(file: MultipartDocumentFile) {
 	}
 
 	if (errors.length > 0) {
-		throw new ImportError('CSV import validation failed', errors);
+		throw new ImportError('Student ID roster import validation failed', errors);
 	}
 
 	return parsedRows;

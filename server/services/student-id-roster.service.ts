@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull, or } from 'drizzle-orm';
 import { db, studentIdRoster, type NewStudentIdRoster } from '../db';
 import {
 	BadRequestError,
@@ -11,6 +11,11 @@ export interface StudentRosterImportRow {
 	fullName: string;
 }
 
+export interface UpdateStudentIdRosterInput {
+	studentId?: string;
+	fullName?: string;
+}
+
 function now() {
 	return new Date().toISOString();
 }
@@ -19,6 +24,12 @@ export const studentIdRosterService = {
 	async findByStudentId(studentId: string, executor: typeof db | any = db) {
 		return await executor.query.studentIdRoster.findFirst({
 			where: eq(studentIdRoster.studentId, studentId),
+		});
+	},
+
+	async findById(id: string, executor: typeof db | any = db) {
+		return await executor.query.studentIdRoster.findFirst({
+			where: eq(studentIdRoster.id, id),
 		});
 	},
 
@@ -145,6 +156,72 @@ export const studentIdRosterService = {
 			created,
 			updated,
 			linkedExisting,
+		};
+	},
+
+	async updateById(
+		id: string,
+		input: UpdateStudentIdRosterInput,
+		executor: typeof db | any = db,
+	) {
+		const existing = await this.findById(id, executor);
+
+		if (!existing) {
+			throw new NotFoundError('Student ID roster row');
+		}
+
+		if (input.studentId && input.studentId !== existing.studentId) {
+			const duplicate = await this.findByStudentId(input.studentId, executor);
+
+			if (duplicate && duplicate.id !== id) {
+				throw new ConflictError('Student ID already exists');
+			}
+		}
+
+		const [row] = await executor
+			.update(studentIdRoster)
+			.set({
+				...input,
+				updatedAt: now(),
+			})
+			.where(eq(studentIdRoster.id, id))
+			.returning();
+
+		return row;
+	},
+
+	async deleteById(id: string, executor: typeof db | any = db) {
+		const [row] = await executor
+			.delete(studentIdRoster)
+			.where(eq(studentIdRoster.id, id))
+			.returning();
+
+		if (!row) {
+			throw new NotFoundError('Student ID roster row');
+		}
+
+		return row;
+	},
+
+	async deleteBatch(input: { ids?: string[]; studentIds?: string[] }) {
+		const conditions = [];
+
+		if (input.ids?.length) {
+			conditions.push(inArray(studentIdRoster.id, input.ids));
+		}
+
+		if (input.studentIds?.length) {
+			conditions.push(inArray(studentIdRoster.studentId, input.studentIds));
+		}
+
+		const rows = await db
+			.delete(studentIdRoster)
+			.where(conditions.length === 1 ? conditions[0] : or(...conditions))
+			.returning();
+
+		return {
+			deleted: rows.length,
+			rows,
 		};
 	},
 };

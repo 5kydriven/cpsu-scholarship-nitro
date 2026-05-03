@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
+import * as XLSX from 'xlsx';
 
 const requestBodyMock = mock(async () => ({
-	file: csvFile('student_id,name\n2024-0001,Ada Lovelace\n'),
+	file: rosterFile(
+		'Student ID No.\tName\n2025-0015-R\tABELO, JANEL\n',
+		'student-id-roster.tsv',
+		'text/tab-separated-values',
+	),
 }));
 const importRowsMock = mock(async (rows) => ({
 	totalRows: rows.length,
@@ -21,10 +26,10 @@ mock.module('#server/services/student-id-roster.service.ts', () => ({
 }));
 
 const { default: handler } = await import(
-	'../../../server/routes/api/admin/students/import.post.ts'
+	'../../../server/routes/api/admin/student-id-roster/import.post.ts'
 );
 
-function csvFile(content: string, filename = 'students.csv', type = 'text/csv') {
+function rosterFile(content: string, filename = 'roster.csv', type = 'text/csv') {
 	return {
 		filename,
 		type,
@@ -37,7 +42,11 @@ function resetMocks() {
 	requestBodyMock.mockClear();
 	importRowsMock.mockClear();
 	requestBodyMock.mockImplementation(async () => ({
-		file: csvFile('student_id,name\n2024-0001,Ada Lovelace\n'),
+		file: rosterFile(
+			'Student ID No.\tName\n2025-0015-R\tABELO, JANEL\n',
+			'student-id-roster.tsv',
+			'text/tab-separated-values',
+		),
 	}));
 	importRowsMock.mockImplementation(async (rows) => ({
 		totalRows: rows.length,
@@ -47,18 +56,37 @@ function resetMocks() {
 	}));
 }
 
-describe('POST /api/admin/students/import', () => {
+function xlsxFile() {
+	const workbook = XLSX.utils.book_new();
+	const worksheet = XLSX.utils.aoa_to_sheet([
+		['Student ID No.', 'Name'],
+		['2025-0075-R', 'AGUADO, LARRY'],
+	]);
+	XLSX.utils.book_append_sheet(workbook, worksheet, 'Roster');
+	const buffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+
+	return {
+		filename: 'student-id-roster.xlsx',
+		type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		size: buffer.byteLength,
+		file: new File([buffer], 'student-id-roster.xlsx', {
+			type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		}),
+	};
+}
+
+describe('POST /api/admin/student-id-roster/import', () => {
 	beforeEach(() => {
 		resetMocks();
 	});
 
-	it('imports valid student roster CSV rows', async () => {
+	it('imports valid student roster tab-separated rows', async () => {
 		const result = await handler({} as any);
 
 		expect(importRowsMock).toHaveBeenCalledWith([
 			{
-				studentId: '2024-0001',
-				fullName: 'Ada Lovelace',
+				studentId: '2025-0015-R',
+				fullName: 'ABELO, JANEL',
 			},
 		]);
 		expect(result).toEqual({
@@ -73,9 +101,29 @@ describe('POST /api/admin/students/import', () => {
 		});
 	});
 
+	it('imports valid Excel workbook rows', async () => {
+		requestBodyMock.mockImplementationOnce(async () => ({
+			file: xlsxFile(),
+		}));
+
+		const result = await handler({} as any);
+
+		expect(importRowsMock).toHaveBeenCalledWith([
+			{
+				studentId: '2025-0075-R',
+				fullName: 'AGUADO, LARRY',
+			},
+		]);
+		expect(result).toEqual(
+			expect.objectContaining({
+				success: true,
+			}),
+		);
+	});
+
 	it('rejects missing CSV headers', async () => {
 		requestBodyMock.mockImplementationOnce(async () => ({
-			file: csvFile('id,name\n2024-0001,Ada Lovelace\n'),
+			file: rosterFile('id,name\n2024-0001,Ada Lovelace\n'),
 		}));
 
 		const response = (await handler({} as any)) as Response;
@@ -84,12 +132,16 @@ describe('POST /api/admin/students/import', () => {
 		expect(response.status).toBe(422);
 		expect(importRowsMock).not.toHaveBeenCalled();
 		expect(json.error.code).toBe('IMPORT_ERROR');
-		expect(json.error.message).toBe('CSV headers must be student_id,name');
+		expect(json.error.message).toBe(
+			'Spreadsheet headers must be Student ID No.,Name',
+		);
 	});
 
 	it('rejects blank values', async () => {
 		requestBodyMock.mockImplementationOnce(async () => ({
-			file: csvFile('student_id,name\n,Ada Lovelace\n2024-0002,\n'),
+			file: rosterFile(
+				'Student ID No.,Name\n,"ABELO, JANEL"\n2025-0022-R,\n',
+			),
 		}));
 
 		const response = (await handler({} as any)) as Response;
@@ -113,8 +165,8 @@ describe('POST /api/admin/students/import', () => {
 
 	it('rejects duplicate student IDs in the same CSV', async () => {
 		requestBodyMock.mockImplementationOnce(async () => ({
-			file: csvFile(
-				'student_id,name\n2024-0001,Ada Lovelace\n2024-0001,Grace Hopper\n',
+			file: rosterFile(
+				'Student ID No.,Name\n2025-0015-R,"ABELO, JANEL"\n2025-0015-R,"AGUADO, LARRY"\n',
 			),
 		}));
 
@@ -127,14 +179,18 @@ describe('POST /api/admin/students/import', () => {
 			{
 				row: 3,
 				field: 'student_id',
-				reason: 'Duplicate student ID in CSV',
+				reason: 'Duplicate student ID in file',
 			},
 		]);
 	});
 
-	it('rejects non-CSV uploads', async () => {
+	it('rejects unsupported uploads', async () => {
 		requestBodyMock.mockImplementationOnce(async () => ({
-			file: csvFile('student_id,name\n2024-0001,Ada Lovelace\n', 'students.txt', 'text/plain'),
+			file: rosterFile(
+				'Student ID No.,Name\n2025-0015-R,"ABELO, JANEL"\n',
+				'students.pdf',
+				'application/pdf',
+			),
 		}));
 
 		const response = (await handler({} as any)) as Response;
